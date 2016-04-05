@@ -12,7 +12,7 @@ Contains:
 # composer install 
 
 ```bash
-composer require "ostico/phporient:dev-master"
+composer require "haiflive/orientdb-yii2-connector"
 ```
 
 # Usage
