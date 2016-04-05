@@ -21,7 +21,7 @@ composer require "ostico/phporient:dev-master"
 ```php
 ...
 'db' => require(__DIR__ . '/db.php'),
-'dborient' => require(__DIR__ . '/dborient.php'),
+'dborient' => require(__DIR__ . '/dborient.php'), \\ << -- add this line
 ...
 ```
 
@@ -41,6 +41,14 @@ return [
 ```
 
 ## controller:
+#### header
+```php
+use PhpOrient\PhpOrient;
+use PhpOrient\Protocols\Binary\Data\Record;
+use OrientDBYii2Connector\Query;
+use OrientDBYii2Connector\DataRreaderOrientDB;
+```
+#### code
 ```php
 $client = Yii::$app->dborient->createCommand();
 $sql = $client->insert('beer', [
