@@ -1,0 +1,18 @@
+{
+    "name": "haiflive/orientdb-yii2-connector",
+    "description": "Yii2 connector to orientDB, php7, query builder, command builder",
+    "type": "library",
+    "require": {
+        "ostico/phporient": "v1.2.3"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "haiflive",
+            "homepage": "https://github.com/haiflive/orientdb-yii2-connector"
+        }
+    ],
+    "autoload": {
+        "psr-4": {"OrientDBYii2Connector\\": "src/OrientDBYii2Connector"}
+    }
+}
