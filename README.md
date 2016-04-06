@@ -89,6 +89,85 @@ $testQ = (new Query())
     ])->execute();
 ```
 
+## ActiveRecord
+You can use ActiveRecord and pagination widgets
+#### Deal.php
+```php
+
+namespace app\models;
+
+use Yii;
+use OrientDBYii2Connector\ActiveRecord;
+
+/**
+ * This is the model class for table "Deal".
+ *
+ * @property string $_rid
+ * @property integer $_version
+ * @property string $_class
+ 
+ * @property string $name
+ * @property string $number
+ */
+class Deal extends ActiveRecord
+{
+    public static function clusterName()
+    {
+        return 'Deal';
+    }
+	
+    /**
+	 *  '_rid', '_version', '_class' - required
+	 *  
+	 */
+	public function attributes()
+    {
+        return ['_rid', '_version', '_class', 'name', 'number'];
+    }
+
+    public function rules()
+    {
+        return [
+            [['_rid', '_class'], 'string'],
+            [['_version'], 'integer'],
+            [['date'], 'safe'],
+            [['name'], 'string', 'max' => 500],
+            [['number'], 'string', 'max' => 255]
+        ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function attributeLabels()
+    {
+        return [
+            'name' => 'Name',
+            'number' => 'Number',
+        ];
+    }
+}
+
+```
+
+#### View
+```php
+
+$dataProvider = new ActiveDataProvider([
+    'query' => Deal::find(),
+    'pagination' => ['pageSize' => 10],
+]);
+
+echo yii\grid\GridView::widget([
+    'dataProvider' => $dataProvider,
+]);
+
+// also use pager:
+echo \yii\widgets\LinkPager::widget([
+    'pagination'=>$dataProvider->pagination,
+]);
+```
+
 # Stability
 Not stable
 
