@@ -1,12 +1,13 @@
 <?php
 namespace OrientDBYii2Connector;
 
-use OrientDBYii2Connector\OrientDBException;
-
 use Yii;
 use yii\db\ActiveQueryInterface;
 use yii\db\ActiveQueryTrait;
 use yii\db\ActiveRelationTrait;
+
+use OrientDBYii2Connector\DataRreaderOrientDB;
+use OrientDBYii2Connector\OrientDBException;
 
 class ActiveQuery extends Query implements ActiveQueryInterface
 {
@@ -20,7 +21,7 @@ class ActiveQuery extends Query implements ActiveQueryInterface
     
     public function all($db = null)
     {
-        return parent::all($db);
+        return (new DataRreaderOrientDB(parent::all($db)))->getTree();
     }
     
     public function one($db = null)

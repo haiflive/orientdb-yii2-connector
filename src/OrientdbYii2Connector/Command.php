@@ -164,7 +164,7 @@ class Command extends Component
         try {
             Yii::beginProfile($token, 'yii\db\Command::query');
             
-            $n = '';
+            $n = [];
             if (!empty($this->fetch_plan) && $fetchMode != self::FETCH_COLUMN && $fetchMode != self::FETCH_SCALAR) { // column or scalar
                 $this->relations = []; // clear
                 $myFunction = function( Record $record) {
