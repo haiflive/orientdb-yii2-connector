@@ -1,13 +1,18 @@
 <?php
 namespace OrientDBYii2Connector;
 
-use OrientDBYii2Connector\OrientDBException;
-
+use Yii;
 use yii\base\Component;
 use yii\db\Expression;
+use yii\db\QueryInterface;
+use yii\db\QueryTrait;
 
-class Query extends Component
+use OrientDBYii2Connector\OrientDBException;
+
+class Query extends Component implements QueryInterface
 {
+    use QueryTrait;
+    
     // QueryTrait:
     public $where;
     public $limit;
@@ -36,6 +41,21 @@ class Query extends Component
         }
         $this->select = $columns;
         $this->selectOption = $option;
+        return $this;
+    }
+    
+    public function addSelect($columns)
+    {
+        if ($columns instanceof Expression) {
+            $columns = [$columns];
+        } elseif (!is_array($columns)) {
+            $columns = preg_split('/\s*,\s*/', trim($columns), -1, PREG_SPLIT_NO_EMPTY);
+        }
+        if ($this->select === null) {
+            $this->select = $columns;
+        } else {
+            $this->select = array_merge($this->select, $columns);
+        }
         return $this;
     }
 
@@ -83,18 +103,6 @@ class Query extends Component
         return $this;
     }
     
-    public function limit($limit)
-    {
-        $this->limit = $limit;
-        return $this;
-    }
-    
-    public function offset($offset)
-    {
-        $this->offset = $offset;
-        return $this;
-    }
-    
     public function groupBy($columns)
     {
         if ($columns instanceof Expression) {
@@ -104,43 +112,6 @@ class Query extends Component
         }
         $this->groupBy = $columns;
         return $this;
-    }
-
-    public function orderBy($columns)
-    {
-        $this->orderBy = $this->normalizeOrderBy($columns);
-        return $this;
-    }
-    
-    public function addOrderBy($columns)
-    {
-        $columns = $this->normalizeOrderBy($columns);
-        if ($this->orderBy === null) {
-            $this->orderBy = $columns;
-        } else {
-            $this->orderBy = array_merge($this->orderBy, $columns);
-        }
-        return $this;
-    }
-    
-    protected function normalizeOrderBy($columns)
-    {
-        if ($columns instanceof Expression) {
-            return [$columns];
-        } elseif (is_array($columns)) {
-            return $columns;
-        } else {
-            $columns = preg_split('/\s*,\s*/', trim($columns), -1, PREG_SPLIT_NO_EMPTY);
-            $result = [];
-            foreach ($columns as $column) {
-                if (preg_match('/^(.*?)\s+(asc|desc)$/i', $column, $matches)) {
-                    $result[$matches[1]] = strcasecmp($matches[2], 'desc') ? SORT_ASC : SORT_DESC;
-                } else {
-                    $result[$column] = SORT_ASC;
-                }
-            }
-            return $result;
-        }
     }
     
     public function params($params)
@@ -287,7 +258,7 @@ class Query extends Component
     public function createCommand($db = null)
     {
         if ($db === null) {
-            $db = Yii::$app->getDb();
+            $db = Yii::$app->get('dborient');;
         }
         list ($sql, $params) = $db->getQueryBuilder()->build($this);
 

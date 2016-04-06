@@ -176,8 +176,6 @@ class Command extends Component
                     'records'   => $n,
                     'relations' => $this->relations
                 ];
-                // assign relations
-                // $this->assignTreeWithData($n, $this->relations);
             } else {
                 $n = [
                     'records'   => $this->db->query($rawSql),
