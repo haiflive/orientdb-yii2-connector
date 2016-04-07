@@ -9,9 +9,33 @@ use yii\db\StaleObjectException;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Inflector;
 use yii\helpers\StringHelper;
+use OrientDBYii2Connector\DataRreaderOrientDB;
 
 abstract class ActiveRecord extends BaseActiveRecord
 {
+    /**
+     * The insert operation. This is mainly used when overriding [[transactions()]] to specify which operations are transactional.
+     */
+    const OP_INSERT = 0x01;
+    /**
+     * The update operation. This is mainly used when overriding [[transactions()]] to specify which operations are transactional.
+     */
+    const OP_UPDATE = 0x02;
+    /**
+     * The delete operation. This is mainly used when overriding [[transactions()]] to specify which operations are transactional.
+     */
+    const OP_DELETE = 0x04;
+    /**
+     * All three operations: insert, update, delete.
+     * This is a shortcut of the expression: OP_INSERT | OP_UPDATE | OP_DELETE.
+     */
+    const OP_ALL = 0x07;
+    
+    public function attributes()
+    {
+        throw new InvalidConfigException(get_called_class() . ' must have attributes() method.');
+    }
+    
     public function mergeAttribute($name, $value)
     {
         $newValue = $this->getAttribute($name);
@@ -32,7 +56,7 @@ abstract class ActiveRecord extends BaseActiveRecord
     
     public static function primaryKey()
     {
-        return ['_rid'];
+        return ['@rid'];
     }
     
     public static function find()
@@ -54,17 +78,7 @@ abstract class ActiveRecord extends BaseActiveRecord
         }
         parent::populateRecord($record, $row);
     }
-    public function attributes()
-    {
-        $class = new \ReflectionClass($this);
-        $names = [];
-        foreach ($class->getProperties(\ReflectionProperty::IS_PUBLIC) as $property) {
-            if (!$property->isStatic()) {
-                $names[] = $property->getName();
-            }
-        }
-        return $names;
-    }
+    
     /**
      * Inserts the record into the database using the attribute values of this record.
      *
@@ -84,80 +98,88 @@ abstract class ActiveRecord extends BaseActiveRecord
      * @param array $options
      * @return boolean whether the attributes are valid and the record is inserted successfully.
      */
-    public function insert($runValidation = true, $attributes = null, $options = [])
+    public function insert($runValidation = true, $attributes = null)
     {
         if ($runValidation && !$this->validate($attributes)) {
+            Yii::info('Model not inserted due to validation error.', __METHOD__);
             return false;
         }
-        $result = $this->insertInternal($attributes, $options);
-        return $result;
+
+        if (!$this->isTransactional(self::OP_INSERT)) {
+            return $this->insertInternal($attributes);
+        }
+
+        $transaction = static::getDb()->beginTransaction();
+        try {
+            $result = $this->insertInternal($attributes);
+            if ($result === false) {
+                $transaction->rollBack();
+            } else {
+                $transaction->commit();
+            }
+            return $result;
+        } catch (\Exception $e) {
+            $transaction->rollBack();
+            throw $e;
+        }
     }
-    protected function insertInternal($attributes = null, $options = [])
+    
+    protected function insertInternal($attributes = null)
     {
         if (!$this->beforeSave(true)) {
             return false;
         }
         $values = $this->getDirtyAttributes($attributes);
-        if (empty($values)) {
-            $currentAttributes = $this->getAttributes();
-            foreach ($this->primaryKey() as $key) {
-                $values[$key] = isset($currentAttributes[$key]) ? $currentAttributes[$key] : null;
-            }
+        
+        if (($primaryKeys = static::getDb()->createCommand()->insert($this->clusterName(), $values)->execute()) === false) {
+            return false;
         }
-        $newId = static::getDb()->getDocumentHandler()->save(static::clusterName(), $values);
-        static::populateRecord($this, static::getDb()->getDocument(static::clusterName(), $newId));
-        $this->setIsNewRecord(false);
+        
+        $values = DataRreaderOrientDB::getRecordData($primaryKeys);
+
         $changedAttributes = array_fill_keys(array_keys($values), null);
-        $this->setOldAttributes($this->getAttributes());
+        $this->setOldAttributes($values);
         $this->afterSave(true, $changedAttributes);
+
         return true;
     }
-    public function update($runValidation = true, $attributeNames = null, $options = [])
+    
+    public function update($runValidation = true, $attributeNames = null)
     {
+        //! bug need convert _rid to rif
+        // UPDATE `Deal` SET number='0000' WHERE @rid='#12:1'
         if ($runValidation && !$this->validate($attributeNames)) {
+            Yii::info('Model not updated due to validation error.', __METHOD__);
             return false;
         }
-        return $this->updateInternal($attributeNames, $options);
-    }
-    protected function updateInternal($attributes = null, $options = [])
-    {
-        if (!$this->beforeSave(false)) {
-            return false;
+
+        if (!$this->isTransactional(self::OP_UPDATE)) {
+            return $this->updateInternal($attributeNames);
         }
-        $values = $this->getDirtyAttributes($attributes);
-        if (empty($values)) {
-            $this->afterSave(false, $values);
-            return 0;
-        }
-        $condition = $this->getOldPrimaryKey(true);
-        $lock = $this->optimisticLock();
-        if ($lock !== null) {
-            if (!isset($values[$lock])) {
-                $values[$lock] = $this->$lock + 1;
+
+        $transaction = static::getDb()->beginTransaction();
+        try {
+            $result = $this->updateInternal($attributeNames);
+            if ($result === false) {
+                $transaction->rollBack();
+            } else {
+                $transaction->commit();
             }
-            $condition[$lock] = $this->$lock;
+            return $result;
+        } catch (\Exception $e) {
+            $transaction->rollBack();
+            throw $e;
         }
-        foreach ($values as $key => $attribute) {
-            $this->setAttribute($key, $attribute);
-        }
-        $rows = (new Query())->options($options)->update(
-            static::clusterName(),
-            $values,
-            [
-                '_key' => $this->getOldAttribute('_key'),
-            ]
-        );
-        if ($lock !== null && !$rows) {
-            throw new StaleObjectException('The object being updated is outdated.');
-        }
-        $changedAttributes = [];
-        foreach ($values as $name => $value) {
-            $changedAttributes[$name] = $this->getOldAttribute($name);
-            $this->setOldAttribute($name, $value);
-        }
-        $this->afterSave(false, $changedAttributes);
-        return $rows;
     }
+    
+    public static function updateAll($attributes, $condition = '', $params = [])
+    {
+        $command = static::getDb()->createCommand();
+        $command->update(static::clusterName(), $attributes, $condition, $params);
+
+        return $command->execute();
+    }
+    
     /**
      * Returns the connection used by this AR class.
      * @return Connection the database connection used by this AR class.
@@ -167,89 +189,14 @@ abstract class ActiveRecord extends BaseActiveRecord
         return \Yii::$app->get('dborient');
     }
     
-    protected static function findByCondition($condition)
+    public static function deleteAll($condition = '', $params = [])
     {
-        /** @var ActiveQuery $query */
-        $query = static::find();
-        if (!ArrayHelper::isAssociative($condition)) {
-            // query by primary key
-            $primaryKey = static::primaryKey();
-            if (isset($primaryKey[0])) {
-                $collection = static::clusterName();
-                $condition = ["{$collection}.{$primaryKey[0]}" => $condition];
-            } else {
-                throw new InvalidConfigException(get_called_class() . ' must have a primary key.');
-            }
-        }
-        return $query->andWhere($condition);
+        $command = static::getDb()->createCommand();
+        $command->delete(static::clusterName(), $condition, $params);
+
+        return $command->execute();
     }
-    /**
-     * Updates records using the provided attribute values and conditions.
-     * For example, to change the status to be 1 for all customers whose status is 2:
-     *
-     * ~~~
-     * Customer::updateAll(['status' => 1], ['status' => '2']);
-     * ~~~
-     *
-     * @param array $attributes attribute values (name-value pairs) to be saved for the record.
-     * Unlike [[update()]] these are not going to be validated.
-     * @param array $condition the condition that matches the records that should get updated.
-     * Please refer to [[QueryInterface::where()]] on how to specify this parameter.
-     * An empty condition will match all records.
-     * @param array $options
-     * @return integer the number of rows updated
-     */
-    public static function updateAll($attributes, $condition = [], $options = [])
-    {
-        return (new Query())->options($options)->update(static::clusterName(), $attributes, $condition);
-    }
-    /**
-     * Deletes records using the provided conditions.
-     * WARNING: If you do not specify any condition, this method will delete ALL rows in the table.
-     *
-     * For example, to delete all customers whose status is 3:
-     *
-     * ~~~
-     * Customer::deleteAll([status = 3]);
-     * ~~~
-     *
-     * @param array $condition the condition that matches the records that should get deleted.
-     * Please refer to [[QueryInterface::where()]] on how to specify this parameter.
-     * An empty condition will match all records.
-     * @param array $options
-     * @return integer the number of rows deleted
-     */
-    public static function deleteAll($condition = [], $options = [])
-    {
-        return (new Query())->options($options)->remove(static::clusterName(), $condition);
-    }
-    public static function truncate()
-    {
-        return static::getDb()->getCollectionHandler()->truncate(static::clusterName());
-    }
-    /**
-     * Saves the current record.
-     *
-     * This method will call [[insert()]] when [[getIsNewRecord()|isNewRecord]] is true, or [[update()]]
-     * when [[getIsNewRecord()|isNewRecord]] is false.
-     *
-     * For example, to save a customer record:
-     *
-     * ~~~
-     * $customer = new Customer; // or $customer = Customer::findOne($id);
-     * $customer->name = $name;
-     * $customer->email = $email;
-     * $customer->save();
-     * ~~~
-     *
-     * @param boolean $runValidation whether to perform validation before saving the record.
-     * If the validation fails, the record will not be saved to database. `false` will be returned
-     * in this case.
-     * @param array $attributeNames list of attributes that need to be saved. Defaults to null,
-     * meaning all attributes that are loaded from DB will be saved.
-     * @param array $options
-     * @return boolean whether the saving succeeds
-     */
+    
     public function save($runValidation = true, $attributeNames = null, $options = [])
     {
         if ($this->getIsNewRecord()) {
@@ -258,38 +205,51 @@ abstract class ActiveRecord extends BaseActiveRecord
             return $this->update($runValidation, $attributeNames, $options) !== false;
         }
     }
-    /**
-     * Deletes the record from the database.
-     *
-     * @param array $options
-     * @return integer|boolean the number of rows deleted, or false if the deletion is unsuccessful for some reason.
-     * Note that it is possible that the number of rows deleted is 0, even though the deletion execution is successful.
-     */
-    public function delete($options = [])
+    
+    public function delete()
     {
-        $result = false;
-        if ($this->beforeDelete()) {
-            $result = $this->deleteInternal($options);
-            $this->afterDelete();
+        if (!$this->isTransactional(self::OP_DELETE)) {
+            return $this->deleteInternal();
         }
-        return $result;
+
+        $transaction = static::getDb()->beginTransaction();
+        try {
+            $result = $this->deleteInternal();
+            if ($result === false) {
+                $transaction->rollBack();
+            } else {
+                $transaction->commit();
+            }
+            return $result;
+        } catch (\Exception $e) {
+            $transaction->rollBack();
+            throw $e;
+        }
     }
     /**
      * @see ActiveRecord::delete()
      * @throws StaleObjectException
      */
-    protected function deleteInternal($options = [])
+    protected function deleteInternal()
     {
+        if (!$this->beforeDelete()) {
+            return false;
+        }
+
+        // we do not check the return value of deleteAll() because it's possible
+        // the record is already deleted in the database and thus the method will return 0
         $condition = $this->getOldPrimaryKey(true);
         $lock = $this->optimisticLock();
         if ($lock !== null) {
             $condition[$lock] = $this->$lock;
         }
-        $result = (new Query())->options($options)->remove(static::clusterName(), $condition);
+        $result = $this->deleteAll($condition);
         if ($lock !== null && !$result) {
             throw new StaleObjectException('The object being deleted is outdated.');
         }
         $this->setOldAttributes(null);
+        $this->afterDelete();
+
         return $result;
     }
     /**
@@ -343,6 +303,7 @@ abstract class ActiveRecord extends BaseActiveRecord
         }
         return false;
     }
+    
     public function init()
     {
         parent::init();
@@ -353,5 +314,18 @@ abstract class ActiveRecord extends BaseActiveRecord
     public function defaultValues()
     {
         return [];
+    }
+    
+    public function transactions()
+    {
+        return [];
+    }
+    
+    public function isTransactional($operation)
+    {
+        $scenario = $this->getScenario();
+        $transactions = $this->transactions();
+
+        return isset($transactions[$scenario]) && ($transactions[$scenario] & $operation);
     }
 }

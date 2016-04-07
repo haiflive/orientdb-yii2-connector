@@ -7,8 +7,6 @@ use yii\db\Expression;
 use yii\db\QueryInterface;
 use yii\db\QueryTrait;
 
-use OrientDBYii2Connector\OrientDBException;
-
 class Query extends Component implements QueryInterface
 {
     use QueryTrait;

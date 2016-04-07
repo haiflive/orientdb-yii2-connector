@@ -22,9 +22,9 @@ class DataRreaderOrientDB extends Component
             // prepair data:
             $rid = $record->getRid();
             $recordData             = $record->getOData();
-            $recordData['_rid']     = $this->IDtoRid($rid);
-            $recordData['_version'] = $record->getVersion();
-            $recordData['_class']   = $record->getOClass();
+            $recordData['@rid']     = $this->IDtoRid($rid);
+            $recordData['@version'] = $record->getVersion();
+            $recordData['@class']   = $record->getOClass();
             foreach($recordData as $key => $value) {
                 if (is_a($value, 'DateTime')) {
                     $value = $value->format('Y-m-d H:i:s');
@@ -50,9 +50,9 @@ class DataRreaderOrientDB extends Component
                                 }
                             }
                             
-                            $vortexData['_rid']     = $this->IDtoRid($vortex->getRid());
-                            $vortexData['_version'] = $vortex->getVersion();
-                            $vortexData['_class']   = $vortex->getOClass();
+                            $vortexData['@rid']     = $this->IDtoRid($vortex->getRid());
+                            $vortexData['@version'] = $vortex->getVersion();
+                            $vortexData['@class']   = $vortex->getOClass();
                             $vortexData['_edge']   =  $this->IDtoRid($relation->getRid());
                             
                             $recordData[$key] = $vortexData;
@@ -76,7 +76,24 @@ class DataRreaderOrientDB extends Component
         return $result;
     }
     
-    protected function isEdge( Record &$record )
+    static public function getRecordData(Record &$record)
+    {
+        $rid = $record->getRid();
+        $recordData             = $record->getOData();
+        $recordData['@rid']     = static::IDtoRid($rid);
+        $recordData['@version'] = $record->getVersion();
+        $recordData['@class']   = $record->getOClass();
+        foreach($recordData as $key => $value) {
+            if (is_a($value, 'DateTime')) {
+                $value = $value->format('Y-m-d H:i:s');
+                $recordData[$key] = $value;
+            }
+        }
+        
+        return $recordData;
+    }
+    
+    static protected function isEdge( Record &$record )
     {
         $data = $record->getOData();
         if(isset($data['in']) && isset($data['out']))
@@ -85,12 +102,12 @@ class DataRreaderOrientDB extends Component
         return false;
     }
     
-    protected function compairRid(ID $rid, ID $rid2)
+    static protected function compairRid(ID $rid, ID $rid2)
     {
         return $rid->cluster === $rid2->cluster && $rid->position === $rid2->position;
     }
     
-    protected function IDtoRid(ID $rid)
+    static protected function IDtoRid(ID $rid)
     {
         return '#' . $rid->cluster . ':' . $rid->position; 
     }
@@ -109,7 +126,7 @@ class DataRreaderOrientDB extends Component
     /**
      *  check is relation by regex #[0-9]+:[0-9]+
      */
-    protected function isRelation($val)
+    static protected function isRelation($val)
     {
         if(is_array($val)) {
             // return true;

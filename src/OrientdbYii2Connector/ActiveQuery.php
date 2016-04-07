@@ -7,7 +7,6 @@ use yii\db\ActiveQueryTrait;
 use yii\db\ActiveRelationTrait;
 
 use OrientDBYii2Connector\DataRreaderOrientDB;
-use OrientDBYii2Connector\OrientDBException;
 
 class ActiveQuery extends Query implements ActiveQueryInterface
 {

@@ -6,8 +6,6 @@ use yii\base\InvalidParamException;
 use yii\base\NotSupportedException;
 use yii\db\Expression;
 
-use OrientDBYii2Connector\QuotaOrientDB;
-
 class QueryBuilder extends \yii\base\Object
 {
     const PARAM_PREFIX = ':qp';
@@ -484,9 +482,15 @@ class QueryBuilder extends \yii\base\Object
                     $params[$n] = $v;
                 }
             } else {
-                $phName = self::PARAM_PREFIX . count($params);
-                $params[$phName] = $value;
-                $values[$i] = $phName;
+                // @rid do not need to quota :
+                if( $column === '@rid' && $this->db->isRid($value) ) {
+                    $values[$i] = $value; // this is primary key like: #12:5
+                } else {
+                    // default:
+                    $phName = self::PARAM_PREFIX . count($params);
+                    $params[$phName] = $value;
+                    $values[$i] = $phName;
+                }
             }
         }
         if (strpos($column, '(') === false) {
@@ -494,7 +498,7 @@ class QueryBuilder extends \yii\base\Object
         }
 
         if (count($values) > 1) {
-            return "$column $operator (" . implode(', ', $values) . ')';
+            return "$column $operator [" . implode(', ', $values) . ']';
         } else {
             $operator = $operator === 'IN' ? '=' : '<>';
             return $column . $operator . reset($values);

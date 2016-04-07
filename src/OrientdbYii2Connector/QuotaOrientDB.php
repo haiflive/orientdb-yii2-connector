@@ -26,21 +26,32 @@ class QuotaOrientDB
     {
         $name = filter_var($tableName, FILTER_VALIDATE_REGEXP, ["options"=>["regexp"=>"/^[a-zA-Z_][a-zA-Z0-9_]*$/"]]);
         if( !$name || empty($name))
-            throw new OrientDBException(__CLASS__ . " unsafe table name") . $tableName;
+            throw new OrientDBException(__CLASS__ . " unsafe table name: "  . $tableName);
         
         return '`'. $name .'`';
     }
     
+    /**
+     *  skip: @rid, @version, @class, clusterName.@rid, clusterName.@version, clusterName.@class
+     */
     static public function quoteColumnName($columName)
     {
-        $name = filter_var($columName, FILTER_VALIDATE_REGEXP, ["options"=>["regexp"=>"/^[a-zA-Z_][a-zA-Z0-9_]*$/"]]);
-        if( !$name || empty($name))
-            throw new OrientDBException(__CLASS__ . " unsafe column name") . $columName;
+        $name = filter_var($columName, FILTER_VALIDATE_REGEXP, [
+                    "options" => [
+                        "regexp"=>"/^[a-zA-Z_@][a-zA-Z0-9_]*(\.@)?[a-zA-Z0-9_]*$/"
+                    ]
+                ]);
         
-        return $name;
+        if( $name !== $columName || empty($name))
+            throw new OrientDBException(__CLASS__ . " unsafe column name: "  . $columName);
+        
+        return $columName;
     }
     
-    
+    static public function isRid($value)
+    {
+        return preg_match("/^#[0-9]*:[0-9]*$/", $value);
+    }
     
     // need ask orientdb's developer what symbols need escape
     static private function escape($str)

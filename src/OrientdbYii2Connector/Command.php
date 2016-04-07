@@ -6,8 +6,6 @@ use yii\base\Component;
 use PhpOrient\Protocols\Binary\Data\Record;
 
 use OrientDBYii2Connector\OrientDBException;
-use OrientDBYii2Connector\QueryBuilder;
-use OrientDBYii2Connector\QuotaOrientDB;
 
 class Command extends Component
 {

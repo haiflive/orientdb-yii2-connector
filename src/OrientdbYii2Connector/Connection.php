@@ -269,6 +269,11 @@ class Connection extends \yii\base\Component
         return QuotaOrientDB::quoteColumnName($name);
     }
     
+    public function isRid($value)
+    {
+        return QuotaOrientDB::isRid($value);
+    }
+    
     // proxy comands to orient driver:
     public function command( $query ) {
         return $this->client->command($query);
