@@ -142,7 +142,7 @@ class Query extends Component implements QueryInterface
         $command = $this->createCommand($db);
         if(!empty($this->fetch_plan))
             $command->setFetch_plan($this->fetch_plan);
-        $rows = $command->queryAll();
+        $rows = (new DataRreaderOrientDB($command->queryAll()))->getTree();
         return $this->populate($rows);
     }
     
@@ -173,7 +173,7 @@ class Query extends Component implements QueryInterface
         } else {
             $rows = $command->queryOne();
             if(isset($rows['records'][0])) {
-                return $rows['records'][0];
+                return DataRreaderOrientDB::getRecordData($rows['records'][0]);
             }
         }
         
@@ -224,7 +224,7 @@ class Query extends Component implements QueryInterface
         $this->select = [new Expression('*')]; // [new Expression('1')]; - PhpOrient return error
         $command = $this->createCommand($db);
         $this->select = $select;
-        var_dump($command->queryScalar());
+        
         return $command->queryScalar() !== null;
     }
     

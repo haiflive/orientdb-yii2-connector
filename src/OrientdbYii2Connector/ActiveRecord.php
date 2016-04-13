@@ -328,4 +328,59 @@ abstract class ActiveRecord extends BaseActiveRecord
 
         return isset($transactions[$scenario]) && ($transactions[$scenario] & $operation);
     }
+    
+    /**
+     *  relations:
+     *  @EMBEDDED
+     *  @EMBEDDEDLIST
+     *  -EMBEDDEDMAP
+     *  -EMBEDDEDSET
+     *  
+     *  @LINK
+     *  @LINKLIST
+     *  -LINKMAP
+     *  -LINKSET
+     */
+    public function hasOne($class, $link)
+    {
+        return self::hasLink($class, $link);
+    }
+    
+    public function hasMany($class, $link)
+    {
+        return self::hasLinkList($class, $link);
+    }
+    
+    public function hasEmbedded($class, $property)
+    {
+        return ['hello'];
+    }
+    
+    public function hasEmbeddedList($class, $property)
+    {
+        return ['hello'];
+    }
+    
+    public function hasLink($class, $property)
+    {
+        /* @var $class ActiveRecordInterface */
+        /* @var $query ActiveQuery */
+        // $query = $class::find();
+        // $query->primaryModel = $this;
+        // $query->link = $link;
+        // $query->multiple = false;
+        return null;
+    }
+    
+    public function hasLinkList($class, $property)
+    {
+        /* @var $class ActiveRecordInterface */
+        /* @var $query ActiveQuery */
+        // $query = $class::find();
+        // $query->primaryModel = $this;
+        // $query->link = $link;
+        // $query->multiple = true;
+        // return $query;
+        return null;
+    }
 }

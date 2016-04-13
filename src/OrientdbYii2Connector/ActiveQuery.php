@@ -18,9 +18,14 @@ class ActiveQuery extends Query implements ActiveQueryInterface
         parent::__construct($config);
     }
     
+    // public function all($db = null)
+    // {
+        // return (new DataRreaderOrientDB(parent::all($db)))->getTree();
+    // }
+    
     public function all($db = null)
     {
-        return (new DataRreaderOrientDB(parent::all($db)))->getTree();
+        return parent::all($db);
     }
     
     public function one($db = null)
@@ -32,5 +37,30 @@ class ActiveQuery extends Query implements ActiveQueryInterface
         } else {
             return null;
         }
+    }
+    
+    /**
+     *  @brief Brief
+     */
+    public function populate($rows)
+    {
+        if (empty($rows)) {
+            return [];
+        }
+
+        $models = $this->createModels($rows);
+        if (!empty($this->join) && $this->indexBy === null) {
+            $models = $this->removeDuplicatedModels($models);
+        }
+        if (!empty($this->with)) {
+            $this->findWith($this->with, $models);
+        }
+        if (!$this->asArray) {
+            foreach ($models as $model) {
+                $model->afterFind();
+            }
+        }
+
+        return $models;
     }
 }
