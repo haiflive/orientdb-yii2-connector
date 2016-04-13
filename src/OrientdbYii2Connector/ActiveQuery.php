@@ -18,11 +18,6 @@ class ActiveQuery extends Query implements ActiveQueryInterface
         parent::__construct($config);
     }
     
-    // public function all($db = null)
-    // {
-        // return (new DataRreaderOrientDB(parent::all($db)))->getTree();
-    // }
-    
     public function all($db = null)
     {
         return parent::all($db);

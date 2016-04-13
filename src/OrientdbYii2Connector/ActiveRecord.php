@@ -135,7 +135,7 @@ abstract class ActiveRecord extends BaseActiveRecord
             return false;
         }
         
-        $values = DataRreaderOrientDB::getRecordData($primaryKeys);
+        $values = $primaryKeys;// DataRreaderOrientDB::getRecordData($primaryKeys);
 
         $changedAttributes = array_fill_keys(array_keys($values), null);
         $this->setOldAttributes($values);

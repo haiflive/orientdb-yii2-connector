@@ -6,6 +6,7 @@ use yii\base\Component;
 use PhpOrient\Protocols\Binary\Data\Record;
 
 use OrientDBYii2Connector\OrientDBException;
+use OrientDBYii2Connector\DataRreaderOrientDB;
 
 class Command extends Component
 {
@@ -161,9 +162,8 @@ class Command extends Component
         $token = $rawSql;
         try {
             Yii::beginProfile($token, 'yii\db\Command::query');
-            
             $n = [];
-            if (!empty($this->fetch_plan) && $fetchMode != self::FETCH_COLUMN && $fetchMode != self::FETCH_SCALAR) { // column or scalar
+            if (!empty($this->fetch_plan) && $fetchMode !== self::FETCH_COLUMN && $fetchMode !== self::FETCH_SCALAR) { // column or scalar
                 $this->relations = []; // clear
                 $myFunction = function( Record $record) {
                     array_push($this->relations, $record);
@@ -229,10 +229,15 @@ class Command extends Component
             Yii::beginProfile($token, __METHOD__);
 
             $n = $this->db->command($rawSql);
-
+            
             Yii::endProfile($token, __METHOD__);
-
-            return $n;
+            
+            if(is_a($n, 'PhpOrient\Protocols\Binary\Data\Record')){
+                return DataRreaderOrientDB::getRecordData($n); // insert return record
+            }
+            
+            return $n; // update return '0' of '1'
+            
         } catch (\Exception $e) {
             Yii::endProfile($token, __METHOD__);
             throw new OrientDBException(__CLASS__ . " databse return error: " . $e->getMessage() . ",  When execute sql: " . $rawSql);

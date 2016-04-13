@@ -45,12 +45,19 @@ class DataRreaderOrientDB extends Component
                 $recordData[$key] = $this->extractRecord($value);
             }
             
-            // EMBEDDEDSET, EMBEDDEDLIST, EMBEDDEDMAP
             else if(is_array($value)) {
                 $embeddedData = [];
                 foreach($value as $childRec) {
+                    // EMBEDDEDSET, EMBEDDEDLIST, EMBEDDEDMAP
                     if(is_a($childRec, 'PhpOrient\Protocols\Binary\Data\Record')) {
                         array_push($embeddedData, $this->extractRecord($childRec));
+                    } else
+                    // LINKSET, LINKLIST, LINKMAP
+                    if(is_a($childRec, 'PhpOrient\Protocols\Binary\Data\ID')){
+                        $vortex = $this->findRelationByRid($childRec);
+                        if(!empty($vortex)) {
+                            array_push($embeddedData, $this->extractRecord($vortex));
+                        }
                     }
                 }
                 
@@ -59,12 +66,13 @@ class DataRreaderOrientDB extends Component
             
             // -- assign ralation data --
             // LINK
-            else if($key !== '@rid' && $this->isLink($value)) {
-                echo "link not ready";
-                die();
+            else if($key !== '@rid' && is_a($value, 'PhpOrient\Protocols\Binary\Data\ID')) {
+                $vortex = $this->findRelationByRid($value);
+                if(!empty($vortex))
+                    $recordData[$key] = $this->extractRecord($vortex); //??? convert to ActiveRecord
             }
             
-            // LINKSET, LINKLIST, LINKMAP
+            // EDGE:
             else if(is_a($value, 'PhpOrient\Protocols\Binary\Data\Bag')) {
                 $rids = $value->getRids();
                 foreach($rids as $rid) {
@@ -132,6 +140,9 @@ class DataRreaderOrientDB extends Component
     //!? relations ordered, you can find from last index
     protected function findRelationByRid(ID $rid)
     {
+        if(empty($this->relations))
+            return null;
+        
         foreach($this->relations as $record){
             if($this->compairRid($record->getRid(), $rid))
                 return $record;
