@@ -16,10 +16,10 @@ class QuotaOrientDB
     static public function quoteValue($value)
     {
         if(is_array($value))
-            return json_encode($value);
+            return json_encode($value); //!? BUG need quota recursively 
         //! BUG need filter all data
         // return bin2hex($value);
-        return self::escape($value);
+        return '\'' . self::escape($value) . '\'';
     }
     
     static public function quoteTableName($tableName)

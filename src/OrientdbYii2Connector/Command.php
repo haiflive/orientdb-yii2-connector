@@ -37,8 +37,10 @@ class Command extends Component
         
         //! BUG, need check Schema
         foreach ($values as $name => $value) {
-            if (is_array($value)) {
+            if (is_array($value) && array_values($value) === $value) { // sequential
                 $this->params[$name] = $value[0];
+            } if(is_array($value)) { // associative array, embedded data
+                $this->params[$name] = $value;
             } else {
                 $this->params[$name] = $value;
             }
@@ -99,7 +101,7 @@ class Command extends Component
         
         $sql = $this->_sql;
         foreach($params as $name => $value) {
-            $sql = str_replace($name, '\'' . $value . '\'', $sql);
+            $sql = str_replace($name, $value, $sql);
         }
         
         // if (!isset($params[1])) {

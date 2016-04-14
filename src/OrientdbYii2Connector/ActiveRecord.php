@@ -31,6 +31,21 @@ abstract class ActiveRecord extends BaseActiveRecord
      */
     const OP_ALL = 0x07;
     
+    public function __call($name, $args)
+    {
+        if(count($args) !== 2)
+            throw new InvalidConfigException(get_called_class() . ', - embedded relation set must have two parametres.');
+        
+        // setAttribute
+        if($this->hasAttribute($name)) {
+            $tmp = $this->getAttribute($name);
+            if(is_array($tmp)) {
+                $tmp[$args[0]] = $args[1];
+                $this->setAttribute($name, $tmp);
+            }
+        }
+    }
+     
     public function attributes()
     {
         throw new InvalidConfigException(get_called_class() . ' must have attributes() method.');
@@ -195,15 +210,6 @@ abstract class ActiveRecord extends BaseActiveRecord
         $command->delete(static::clusterName(), $condition, $params);
 
         return $command->execute();
-    }
-    
-    public function save($runValidation = true, $attributeNames = null, $options = [])
-    {
-        if ($this->getIsNewRecord()) {
-            return $this->insert($runValidation, $attributeNames, $options);
-        } else {
-            return $this->update($runValidation, $attributeNames, $options) !== false;
-        }
     }
     
     public function delete()
