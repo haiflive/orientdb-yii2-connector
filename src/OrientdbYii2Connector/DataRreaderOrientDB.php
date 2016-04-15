@@ -57,6 +57,8 @@ class DataRreaderOrientDB extends Component
                         $vortex = $this->findRelationByRid($childRec);
                         if(!empty($vortex)) {
                             array_push($embeddedData, $this->extractRecord($vortex));
+                        } else { // not loaded
+                            array_push($embeddedData, $childRec);
                         }
                     }
                 }
@@ -132,12 +134,12 @@ class DataRreaderOrientDB extends Component
         return $rid->cluster === $rid2->cluster && $rid->position === $rid2->position;
     }
     
-    static protected function IDtoRid(ID $rid)
+    static public function IDtoRid(ID $rid)
     {
         return '#' . $rid->cluster . ':' . $rid->position; 
     }
     
-    //!? relations ordered, you can find from last index
+    //!? relations ordered, you can find from last index, but it can duplicate(for LINKLIST)
     protected function findRelationByRid(ID $rid)
     {
         if(empty($this->relations))

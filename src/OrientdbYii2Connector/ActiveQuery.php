@@ -34,6 +34,38 @@ class ActiveQuery extends Query implements ActiveQueryInterface
         }
     }
     
+    public function with()
+    {
+        $with = func_get_args();
+        if (isset($with[0]) && is_array($with[0])) {
+            // the parameter is given as an array
+            $with = $with[0];
+        }
+
+        if (empty($this->with)) {
+            $this->with = $with;
+        } elseif (!empty($with)) {
+            foreach ($with as $name => $value) {
+                if (is_int($name)) {
+                    // repeating relation is fine as normalizeRelations() handle it well
+                    $this->with[] = $value;
+                } else {
+                    $this->with[$name] = $value;
+                }
+            }
+        }
+        
+        // setup fetch_plan
+        $fetch_plan = [];
+        foreach($this->with as $rel) {
+            array_push($fetch_plan, $rel.':0');
+        }
+        
+        $this->fetch_plan($fetch_plan);
+
+        return $this;
+    }
+    
     /**
      *  @brief Brief
      */
@@ -44,9 +76,9 @@ class ActiveQuery extends Query implements ActiveQueryInterface
         }
 
         $models = $this->createModels($rows);
-        if (!empty($this->join) && $this->indexBy === null) {
-            $models = $this->removeDuplicatedModels($models);
-        }
+        // if (!empty($this->join) && $this->indexBy === null) {
+            // $models = $this->removeDuplicatedModels($models);
+        // }
         if (!empty($this->with)) {
             $this->findWith($this->with, $models);
         }
@@ -57,5 +89,61 @@ class ActiveQuery extends Query implements ActiveQueryInterface
         }
 
         return $models;
+    }
+    
+    public function findWith($with, &$models)
+    {
+        $primaryModel = new $this->modelClass;
+        $relations = $this->normalizeRelations($primaryModel, $with);
+        /* @var $relation ActiveQuery */
+        foreach ($relations as $name => $relation) {
+            if ($relation->asArray === null) {
+                // inherit asArray from primary query
+                $relation->asArray($this->asArray);
+            }
+            $relation->populateRelation($name, $models);
+        }
+    }
+    
+    public function populateRelation($name, &$primaryModels)
+    {
+        //! BUG need recursive
+        if (!$this->multiple && count($primaryModels) === 1) {
+            foreach ($primaryModels as $i => $primaryModel) {
+                if ($primaryModel instanceof ActiveRecordInterface) { // ??? for what
+                    $model = $this->one();
+                    $primaryModel->populateRelation($name, $model);
+                } else {
+                    $rows = $primaryModels[$i][$name];
+                    $model = $this->populate([$rows]);
+                    
+                    $primaryModels[$i][$name] = reset($model) ?: $this->one();
+                }
+                // if ($this->inverseOf !== null) { // ??? for what
+                    // $this->populateInverseRelation($primaryModels, [$model], $name, $this->inverseOf);
+                // }
+            }
+
+            return [$model];
+        } else {
+            $link = $this->link;
+            foreach ($primaryModels as $i => $primaryModel) {
+                if ($this->multiple && count($link) === 1 && is_array($rows = $primaryModel[$link])) {
+                    $models = $this->populate($rows);
+                    $value = $models ?: $this->all();
+                }
+                
+                if ($primaryModel instanceof ActiveRecordInterface) { // ??? for what
+                    $primaryModel->populateRelation($name, $value);
+                } else {
+                    $primaryModels[$i][$name] = $value;
+                }
+            }
+            // if ($this->inverseOf !== null) {
+                // $this->populateInverseRelation($primaryModels, $models, $name, $this->inverseOf);
+            // }
+
+            return $models;
+        }
     }
 }

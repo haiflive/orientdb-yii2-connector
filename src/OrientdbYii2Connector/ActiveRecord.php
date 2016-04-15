@@ -31,21 +31,64 @@ abstract class ActiveRecord extends BaseActiveRecord
      */
     const OP_ALL = 0x07;
     
-    public function __call($name, $args)
-    {
-        if(count($args) !== 2)
-            throw new InvalidConfigException(get_called_class() . ', - embedded relation set must have two parametres.');
+    // public function __call($name, $args)
+    // {
+        // if(count($args) !== 2)
+            // throw new InvalidConfigException(get_called_class() . ', - embedded relation set must have two parametres.');
         
-        // setAttribute
-        if($this->hasAttribute($name)) {
-            $tmp = $this->getAttribute($name);
-            if(is_array($tmp)) {
-                $tmp[$args[0]] = $args[1];
-                $this->setAttribute($name, $tmp);
+        // // setAttribute
+        // if($this->hasAttribute($name)) {
+            // $tmp = $this->getAttribute($name);
+            // if(is_array($tmp)) {
+                // $tmp[$args[0]] = $args[1];
+                // $this->setAttribute($name, $tmp);
+            // }
+        // }
+    // }
+    
+    public function __get($name)
+    {
+        // lazy loading
+        if(
+               is_a($this->getAttribute($name), 'PhpOrient\Protocols\Binary\Data\ID')
+            || $this->isArrayOfRid($this->getAttribute($name))
+        ) {
+            $getter = 'get' . $name;
+            if (method_exists($this, $getter)) {
+                // read property, e.g. getName()
+                $query = $this->$getter();
+                if($query->multiple) {
+                    $rids = $this->getAttribute($query->link);
+                    $ridsResult = [];
+                    foreach($rids as $rid)
+                        array_push($ridsResult, DataRreaderOrientDB::IDtoRid($rid));
+                    $query->andWhere(['in', '@rid', $ridsResult]);
+                    return $query->all();
+                }
+                // else
+                $rid = $this->getAttribute($query->link);
+                $query->andWhere(['=', '@rid', DataRreaderOrientDB::IDtoRid($rid)]);
+                return $query->one();
             }
         }
+        
+        return parent::__get($name);
     }
-     
+    
+    protected function isArrayOfRid($property)
+    {
+        if(!is_array($property))
+            return false;
+            
+        if(is_array($property)) {
+            foreach($property as $rid) {
+                if(!is_a($rid, 'PhpOrient\Protocols\Binary\Data\ID'))
+                    return false;
+            }
+        }
+        return true;
+    }
+    
     public function attributes()
     {
         throw new InvalidConfigException(get_called_class() . ' must have attributes() method.');
@@ -333,60 +376,5 @@ abstract class ActiveRecord extends BaseActiveRecord
         $transactions = $this->transactions();
 
         return isset($transactions[$scenario]) && ($transactions[$scenario] & $operation);
-    }
-    
-    /**
-     *  relations:
-     *  @EMBEDDED
-     *  @EMBEDDEDLIST
-     *  -EMBEDDEDMAP
-     *  -EMBEDDEDSET
-     *  
-     *  @LINK
-     *  @LINKLIST
-     *  -LINKMAP
-     *  -LINKSET
-     */
-    public function hasOne($class, $link)
-    {
-        return self::hasLink($class, $link);
-    }
-    
-    public function hasMany($class, $link)
-    {
-        return self::hasLinkList($class, $link);
-    }
-    
-    public function hasEmbedded($class, $property)
-    {
-        return ['hello'];
-    }
-    
-    public function hasEmbeddedList($class, $property)
-    {
-        return ['hello'];
-    }
-    
-    public function hasLink($class, $property)
-    {
-        /* @var $class ActiveRecordInterface */
-        /* @var $query ActiveQuery */
-        // $query = $class::find();
-        // $query->primaryModel = $this;
-        // $query->link = $link;
-        // $query->multiple = false;
-        return null;
-    }
-    
-    public function hasLinkList($class, $property)
-    {
-        /* @var $class ActiveRecordInterface */
-        /* @var $query ActiveQuery */
-        // $query = $class::find();
-        // $query->primaryModel = $this;
-        // $query->link = $link;
-        // $query->multiple = true;
-        // return $query;
-        return null;
     }
 }

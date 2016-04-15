@@ -15,8 +15,27 @@ class QuotaOrientDB
      */
     static public function quoteValue($value)
     {
-        if(is_array($value))
-            return json_encode($value); //!? BUG need quota recursively 
+        if(is_array($value)) {
+            $isArrayOfRid = true;
+            foreach($value as $key => $val) {
+                if ($val instanceof ActiveRecord) { // LINKLIST relation
+                    $rid = $val->getAttribute($val->primaryKey()[0]);
+                    if(self::isRid($rid)) {
+                        $value[$key] = $rid;
+                    } else {
+                        $value[$key] = null; //? unexpected data, need to return error
+                        $isArrayOfRid = false;
+                    }
+                } else {
+                    $isArrayOfRid = false;
+                }
+            }
+            
+            if(!$isArrayOfRid) // it embeddedlist
+                return json_encode($value); //!? BUG need quota recursively 
+            
+            return '['. implode(',', $value) .']';
+        }
         //! BUG need filter all data
         // return bin2hex($value);
         return '\'' . self::escape($value) . '\'';

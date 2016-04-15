@@ -17,7 +17,7 @@ class Query extends Component implements QueryInterface
     public $offset;
     public $orderBy;
     public $groupBy;
-    public $indexBy;
+    // public $indexBy;
     // base:
     public $select;
     public $selectOption;
@@ -68,6 +68,7 @@ class Query extends Component implements QueryInterface
     
     public function fetch_plan($plains)
     {
+        //! BUG need clear $this->with(if it ActiveQuery)
         $this->fetch_plan = $plains;
         return $this;
     }
@@ -144,23 +145,6 @@ class Query extends Component implements QueryInterface
             $command->setFetch_plan($this->fetch_plan);
         $rows = (new DataRreaderOrientDB($command->queryAll()))->getTree();
         return $this->populate($rows);
-    }
-    
-    public function populate($rows)
-    {
-        if ($this->indexBy === null) {
-            return $rows;
-        }
-        $result = [];
-        foreach ($rows as $row) {
-            if (is_string($this->indexBy)) {
-                $key = $row[$this->indexBy];
-            } else {
-                $key = call_user_func($this->indexBy, $row);
-            }
-            $result[$key] = $row;
-        }
-        return $result;
     }
     
     public function one($db = null)

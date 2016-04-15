@@ -161,7 +161,9 @@ class Command extends Component
         
         Yii::info($rawSql, 'app\components\orientdb::query');
         
-        $token = $rawSql;
+        $fetchplan = empty($this->fetch_plan) ? '' : ' fetchplan ' . $this->fetch_plan;
+        
+        $token = $rawSql . $fetchplan;
         try {
             Yii::beginProfile($token, 'yii\db\Command::query');
             $n = [];
@@ -228,11 +230,11 @@ class Command extends Component
         
         $token = $rawSql;
         try {
-            Yii::beginProfile($token, __METHOD__);
+            Yii::beginProfile($token, 'yii\db\Command::query');
 
             $n = $this->db->command($rawSql);
             
-            Yii::endProfile($token, __METHOD__);
+            Yii::endProfile($token, 'yii\db\Command::query');
             
             if(is_a($n, 'PhpOrient\Protocols\Binary\Data\Record')){
                 return DataRreaderOrientDB::getRecordData($n); // insert return record
