@@ -115,6 +115,8 @@ class ActiveQuery extends Query implements ActiveQueryInterface
                     $primaryModel->populateRelation($name, $model);
                 } else {
                     $rows = $primaryModels[$i][$name];
+                    if(empty($rows))
+                        return [];
                     $model = $this->populate([$rows]);
                     
                     $primaryModels[$i][$name] = reset($model) ?: $this->one();
@@ -127,16 +129,18 @@ class ActiveQuery extends Query implements ActiveQueryInterface
             return [$model];
         } else {
             $link = $this->link;
+            $models = [];
             foreach ($primaryModels as $i => $primaryModel) {
                 if ($this->multiple && count($link) === 1 && is_array($rows = $primaryModel[$link])) {
-                    $models = $this->populate($rows);
-                    $value = $models ?: $this->all();
-                }
-                
-                if ($primaryModel instanceof ActiveRecordInterface) { // ??? for what
-                    $primaryModel->populateRelation($name, $value);
-                } else {
-                    $primaryModels[$i][$name] = $value;
+                    $model = $this->populate($rows);
+                    $value = $model ?: $this->all();
+                    
+                    if ($primaryModel instanceof ActiveRecordInterface) { // ??? for what
+                        $primaryModel->populateRelation($name, $value);
+                    } else {
+                        $primaryModels[$i][$name] = $value;
+                    }
+                    array_push($models, $model);
                 }
             }
             // if ($this->inverseOf !== null) {

@@ -131,9 +131,6 @@ abstract class ActiveRecord extends BaseActiveRecord
      */
     public static function populateRecord($record, $row)
     {
-        if ($row instanceof Document) {
-            $row = $row->getAll();
-        }
         parent::populateRecord($record, $row);
     }
     
