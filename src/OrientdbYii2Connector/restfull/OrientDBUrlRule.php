@@ -7,7 +7,7 @@ use yii\rest\UrlRule;
 class OrientDBUrlRule extends UrlRule
 {
     public $tokens = [
-        '{id}' => '<id:\\d[\\d,]*:\\d[\\d,]*>',
+        '{id}' => '<id:\\#\\d[\\d,]*:\\d[\\d,]*>',
     ];
     
 }
