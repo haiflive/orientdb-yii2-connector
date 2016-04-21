@@ -190,7 +190,10 @@ abstract class ActiveRecord extends BaseActiveRecord
             return false;
         }
         
-        $values = $primaryKeys;// DataRreaderOrientDB::getRecordData($primaryKeys);
+        foreach ($primaryKeys as $name => $value) {
+            $this->setAttribute($name, $value);
+            $values[$name] = $value;
+        } // DataRreaderOrientDB::getRecordData($primaryKeys);
 
         $changedAttributes = array_fill_keys(array_keys($values), null);
         $this->setOldAttributes($values);
