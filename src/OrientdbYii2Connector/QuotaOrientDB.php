@@ -32,7 +32,7 @@ class QuotaOrientDB
             }
             
             if(!$isArrayOfRid) // it embeddedlist
-                return json_encode($value); //!? BUG need quota recursively 
+                return json_encode(self::prepairEmbedded($value)); //!? BUG need quota recursively 
             
             return '['. implode(',', $value) .']';
         }
@@ -85,5 +85,27 @@ class QuotaOrientDB
         
         
         return str_replace($search, $replace, $str);
+    }
+    
+    static function prepairEmbedded($embeddedData) {
+         // this embedded record:
+        if(isset($embeddedData['@class'])) {
+            $embeddedData['@type'] = 'd'; // required field for embedded record
+            // find child record:
+            foreach($embeddedData as $key => $val) {
+                if(is_array($embeddedData[$key]))
+                    $embeddedData[$key] = self::prepairEmbedded($val);
+            }
+            
+            return $embeddedData;
+        }
+        
+        // this embedded list:
+        $result = [];
+        foreach($embeddedData as $key => $val) {
+            array_push($result, self::prepairEmbedded($val));
+        }
+        
+        return $result;
     }
 }
