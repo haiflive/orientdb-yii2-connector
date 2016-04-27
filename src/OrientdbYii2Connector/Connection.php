@@ -66,9 +66,10 @@ class Connection extends \yii\base\Component
     protected $inTransaction;
     
     /**
-     * @var QueryBuilder the query builder for this database
+     * @var Schema the database schema
      */
-    private $_builder;
+    private $_schema;
+    public $enableSchemaCache = false;
     
     public function init()
     {
@@ -122,6 +123,7 @@ class Connection extends \yii\base\Component
             $this->client->dbClose(); // returns int
             Yii::trace('Removing client connection instance: ' . $this->hostname . ':' . $this->port, __METHOD__);
             $this->client = null;
+            $this->_schema = null;
             $this->_transaction = null;
         }
     }
@@ -239,39 +241,45 @@ class Connection extends \yii\base\Component
         return $result;
     }
     
-    public function getQueryBuilder()
+    public function getSchema()
     {
-        if ($this->_builder === null) {
-            $this->_builder = $this->createQueryBuilder();
-        }
+        if ($this->_schema !== null) {
+            return $this->_schema;
+        } else {
+            $config = ['class' => 'OrientDBYii2Connector\Schema'];
+            $config['db'] = $this;
 
-        return $this->_builder;
+            return $this->_schema = Yii::createObject($config);
+        }
     }
     
-    public function createQueryBuilder()
+    public function getQueryBuilder()
     {
-        return new QueryBuilder($this);
+        return $this->getSchema()->getQueryBuilder();
     }
     
     // quota methods
     public function quoteValue($value)
     {
-        return QuotaOrientDB::quoteValue($value);
+        // return QuotaOrientDB::quoteValue($value);
+        return $this->getSchema()->quoteValue($value);
     }
     
     public function quoteTableName($name)
     {
         return QuotaOrientDB::quoteTableName($name);
+        // return $this->getSchema()->quoteTableName($name);
     }
     
     public function quoteColumnName($name)
     {
-        return QuotaOrientDB::quoteColumnName($name);
+        // return QuotaOrientDB::quoteColumnName($name);
+        return $this->getSchema()->quoteColumnName($name);
     }
     
     public function isRid($value)
     {
-        return QuotaOrientDB::isRid($value);
+        return $this->getSchema()->isRid($value);
     }
     
     // proxy comands to orient driver:

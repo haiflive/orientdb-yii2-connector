@@ -91,7 +91,8 @@ abstract class ActiveRecord extends BaseActiveRecord
     
     public function attributes()
     {
-        throw new InvalidConfigException(get_called_class() . ' must have attributes() method.');
+        return array_keys(static::getTableSchema()->columns);
+        // throw new InvalidConfigException(get_called_class() . ' must have attributes() method.');
     }
     
     public function mergeAttribute($name, $value)
@@ -110,6 +111,19 @@ abstract class ActiveRecord extends BaseActiveRecord
     public static function clusterName()
     {
         return Inflector::camel2id(StringHelper::basename(get_called_class()), '_');
+    }
+    
+    public static function getTableSchema()
+    {
+        $tableSchema = static::getDb()
+            ->getSchema()
+            ->getTableSchema(static::clusterName());
+
+        if ($tableSchema === null) {
+            throw new InvalidConfigException('The table does not exist: ' . static::clusterName());
+        }
+
+        return $tableSchema;
     }
     
     public static function primaryKey()
