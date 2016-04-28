@@ -119,11 +119,11 @@ class Deal extends ActiveRecord
     public function rules()
     {
         return [
-            [['_rid', '_class'], 'string'],
-            [['_version'], 'integer'],
-            [['date'], 'safe'],
-            [['name'], 'string', 'max' => 500],
-            [['number'], 'string', 'max' => 255]
+            [['@rid', '@class'], 'string'],
+            [['@version'], 'integer'],
+            [['Name', 'Note'], 'string', 'max' => 500],
+            [['Number'], 'string', 'max' => 255],
+            [['Date', 'points'], 'safe'],
         ];
     }
 
