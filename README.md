@@ -115,15 +115,6 @@ class Deal extends ActiveRecord
     {
         return 'Deal';
     }
-	
-    /**
-	 *  '_rid', '_version', '_class' - required
-	 *  
-	 */
-	public function attributes()
-    {
-        return ['_rid', '_version', '_class', 'name', 'number'];
-    }
 
     public function rules()
     {
