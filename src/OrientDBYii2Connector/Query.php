@@ -11,18 +11,12 @@ class Query extends Component implements QueryInterface
 {
     use QueryTrait;
     
-    // QueryTrait:
-    public $where;
-    public $limit;
-    public $offset;
-    public $orderBy;
-    public $groupBy;
-    // public $indexBy;
     // base:
     public $select;
     public $selectOption;
     public $distinct;
     public $from;
+    public $groupBy;
     // not supported by OrientDB(user fetch_plan):
     // public $join;
     // public $having;
