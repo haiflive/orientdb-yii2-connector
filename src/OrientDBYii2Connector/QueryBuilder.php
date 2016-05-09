@@ -6,6 +6,8 @@ use yii\base\InvalidParamException;
 use yii\base\NotSupportedException;
 use yii\db\Expression;
 
+use OrientDBYii2Connector\OrientDBException;
+
 class QueryBuilder extends \yii\base\Object
 {
     const PARAM_PREFIX = ':qp';
@@ -93,7 +95,10 @@ class QueryBuilder extends \yii\base\Object
                 $params[$phName] = $value;
             }
         }
-
+        
+        if(empty($placeholders))
+            throw new OrientDBException(__CLASS__ . " Error. DEFAULT VALUES not supported");
+        
         return 'INSERT INTO ' . $this->db->quoteTableName($table)
             . (!empty($names) ? ' (' . implode(', ', $names) . ')' : '')
             . (!empty($placeholders) ? ' VALUES (' . implode(', ', $placeholders) . ')' : ' DEFAULT VALUES');
