@@ -7,7 +7,7 @@ use PhpOrient\PhpOrient;
 use OrientDBYii2Connector\Command;
 use OrientDBYii2Connector\NotSupportedException;
 
-class Connection extends \yii\base\Component
+class Connection extends \yii\db\Connection /* gii reqire extends from \yii\db\Connection, default extends from \yii\base\Component */
 {
     /**
      * @event Event an event that is triggered after a DB connection is established
@@ -70,6 +70,7 @@ class Connection extends \yii\base\Component
      */
     private $_schema;
     public $enableSchemaCache = false;
+    public $tablePrefix = '';
     
     public function init()
     {
@@ -256,6 +257,11 @@ class Connection extends \yii\base\Component
     public function getQueryBuilder()
     {
         return $this->getSchema()->getQueryBuilder();
+    }
+    
+    public function getTableSchema($name, $refresh = false)
+    {
+        return $this->getSchema()->getTableSchema($name, $refresh);
     }
     
     // quota methods

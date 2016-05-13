@@ -38,6 +38,8 @@ class Schema extends \yii\db\Schema
         'enum' => self::TYPE_STRING,
     ];
     
+    protected $columnTypes;
+    
     // public function quoteSimpleTableName($name)
     // {
         // return strpos($name, '`') !== false ? $name : "`$name`";
@@ -107,8 +109,7 @@ class Schema extends \yii\db\Schema
         
         $column->name = $info['name'];
         $column->allowNull = !$info['notNull'];
-        
-        $column->dbType = 'longtext'; //$info['type']; //! BUG, need assign with types
+        $column->dbType = $this->getColumnType($info['globalId']); // 'longtext'; //$info['type']; //! BUG, need assign with types
         
         $column->type = self::TYPE_STRING;
         if (preg_match('/^(\w+)(?:\(([^\)]+)\))?/', $column->dbType, $matches)) {
@@ -147,6 +148,32 @@ class Schema extends \yii\db\Schema
         return $column;
     }
     
+    protected function getColumnType($columnID){
+        if(empty($this->columnTypes)) {
+            $sql = 'select globalProperties from metadata:schema LIMIT 100000';
+            try {
+                $this->columnTypes = [];
+                
+                $data = $this->db->createCommand($sql)->queryAll();
+                $columns = $data['records'][0]->getOData();
+                
+                foreach($columns['globalProperties'] as $column) {
+                    array_push($this->columnTypes, $column->getOData());
+                }
+                
+            } catch (\Exception $e) {
+                throw $e;
+            }
+        }
+        
+        foreach($this->columnTypes as $columnType) {
+            if($columnType['id'] == $columnID)
+                return $columnType['type'];
+        }
+        
+        return 'longtext'; // default
+    }
+    
     protected function findColumns($table)
     {
         $sql = 'select expand(properties) from (
@@ -167,8 +194,8 @@ class Schema extends \yii\db\Schema
         $column = $this->createColumnSchema();
         $column->name = '@rid'; // -
         $column->allowNull = true;
-        $column->dbType = 'bigint';
-        $column->type = self::TYPE_BIGINT;
+        $column->dbType = 'string';
+        $column->type = self::TYPE_STRING;
         $column->phpType = $this->getColumnPhpType($column);
         
         $table->columns[$column->name] = $column;
@@ -186,11 +213,12 @@ class Schema extends \yii\db\Schema
         $column = $this->createColumnSchema();
         $column->name = '@class'; // -
         $column->allowNull = true;
-        $column->dbType = 'bigint';
-        $column->type = self::TYPE_BIGINT;
+        $column->dbType = 'string';
+        $column->type = self::TYPE_STRING;
         $column->phpType = $this->getColumnPhpType($column);
         
         $table->columns[$column->name] = $column;
+        ksort($table->columns); // orientdb return random sort, for gii prefere ASC sort
         // --
         
         $table->primaryKey[] = '@rid';
@@ -201,6 +229,7 @@ class Schema extends \yii\db\Schema
     protected function findConstraints($table)
     {
         //? BUG, Constraints
+        // orientdb has no `primary` and `foreign` keys
     }
     
     // not tested -> and not supported yet

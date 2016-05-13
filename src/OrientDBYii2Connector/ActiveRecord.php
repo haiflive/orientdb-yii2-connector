@@ -4,14 +4,13 @@ namespace OrientDBYii2Connector;
 use Yii;
 use yii\base\InvalidConfigException;
 use yii\db\ActiveQueryInterface;
-use yii\db\BaseActiveRecord;
 use yii\db\StaleObjectException;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Inflector;
 use yii\helpers\StringHelper;
 use OrientDBYii2Connector\DataRreaderOrientDB;
 
-abstract class ActiveRecord extends BaseActiveRecord
+abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends from \yii\db\ActiveRecord, default extends from yii\db\BaseActiveRecord */
 {
     /**
      * The insert operation. This is mainly used when overriding [[transactions()]] to specify which operations are transactional.
@@ -108,7 +107,8 @@ abstract class ActiveRecord extends BaseActiveRecord
             $this->setAttribute($name, $newValue);
         }
     }
-    public static function clusterName()
+    
+    public static function tableName()
     {
         return Inflector::camel2id(StringHelper::basename(get_called_class()), '_');
     }
@@ -117,10 +117,10 @@ abstract class ActiveRecord extends BaseActiveRecord
     {
         $tableSchema = static::getDb()
             ->getSchema()
-            ->getTableSchema(static::clusterName());
+            ->getTableSchema(static::tableName());
 
         if ($tableSchema === null) {
-            throw new InvalidConfigException('The table does not exist: ' . static::clusterName());
+            throw new InvalidConfigException('The table does not exist: ' . static::tableName());
         }
 
         return $tableSchema;
@@ -135,7 +135,7 @@ abstract class ActiveRecord extends BaseActiveRecord
     {
         /** @var ActiveQuery $query */
         $query = \Yii::createObject(ActiveQuery::className(), [get_called_class()]);
-        $query->from(static::clusterName()); //->select(static::clusterName());
+        $query->from(static::tableName()); //->select(static::tableName());
         return $query;
     }
     
@@ -200,7 +200,7 @@ abstract class ActiveRecord extends BaseActiveRecord
         }
         $values = $this->getDirtyAttributes($attributes);
         
-        if (($primaryKeys = static::getDb()->createCommand()->insert($this->clusterName(), $values)->execute()) === false) {
+        if (($primaryKeys = static::getDb()->createCommand()->insert($this->tableName(), $values)->execute()) === false) {
             return false;
         }
         
@@ -247,7 +247,7 @@ abstract class ActiveRecord extends BaseActiveRecord
     public static function updateAll($attributes, $condition = '', $params = [])
     {
         $command = static::getDb()->createCommand();
-        $command->update(static::clusterName(), $attributes, $condition, $params);
+        $command->update(static::tableName(), $attributes, $condition, $params);
 
         return $command->execute();
     }
@@ -264,7 +264,7 @@ abstract class ActiveRecord extends BaseActiveRecord
     public static function deleteAll($condition = '', $params = [])
     {
         $command = static::getDb()->createCommand();
-        $command->delete(static::clusterName(), $condition, $params);
+        $command->delete(static::tableName(), $condition, $params);
 
         return $command->execute();
     }
