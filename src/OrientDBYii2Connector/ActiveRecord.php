@@ -8,6 +8,7 @@ use yii\db\StaleObjectException;
 use yii\helpers\ArrayHelper;
 use yii\helpers\Inflector;
 use yii\helpers\StringHelper;
+use yii\db\BaseActiveRecord;
 use OrientDBYii2Connector\DataRreaderOrientDB;
 
 abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends from \yii\db\ActiveRecord, default extends from yii\db\BaseActiveRecord */
@@ -145,7 +146,7 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
      */
     public static function populateRecord($record, $row)
     {
-        parent::populateRecord($record, $row);
+        BaseActiveRecord::populateRecord($record, $row);
     }
     
     /**
@@ -330,7 +331,7 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
             }
             return self::isArrayChanged($new, $old, $depth);
         } else {
-            return parent::isAttributeChanged($name);
+            return BaseActiveRecord::isAttributeChanged($name);
         }
     }
     private static function isArrayChanged(&$new, &$old, $depth)
