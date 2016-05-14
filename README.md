@@ -5,6 +5,9 @@ Contains:
  - Quota data
  - Command builder
  - Query builder
+ - ActiveRecord
+ - RESTfull
+ - gii support
 
 ###### Warning:
 > OrientDB PHP binary protocol has no PDO or Quota methods, this library can bee unsafe
@@ -94,36 +97,55 @@ You can use ActiveRecord and pagination widgets
 #### Deal.php
 ```php
 
+<?php
+
 namespace app\models;
 
 use Yii;
-use OrientDBYii2Connector\ActiveRecord;
 
 /**
- * This is the model class for table "Deal".
+ * This is the model class for table "Deals".
  *
- * @property string $_rid
- * @property integer $_version
- * @property string $_class
- 
- * @property string $name
- * @property string $number
+ * @property string $@class
+ * @property string $@rid
+ * @property integer $@version
+ * @property string $Date
+ * @property string $Name
+ * @property string $Note
+ * @property string $Number
+ * @property string $from_address
+ * @property string $points
+ * @property string $reciver
+ * @property string $sender
+ * @property string $to_address
  */
-class Deal extends ActiveRecord
+class Deals extends \OrientDBYii2Connector\ActiveRecord
 {
-    public static function clusterName()
+    /**
+     * @inheritdoc
+     */
+    public static function tableName()
     {
-        return 'Deal';
+        return 'Deals';
     }
 
+    /**
+     * @return \yii\db\Connection the database connection used by this AR class.
+     */
+    public static function getDb()
+    {
+        return Yii::$app->get('dborient');
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function rules()
     {
         return [
-            [['@rid', '@class'], 'string'],
+            [['@class', '@rid', 'Name', 'Note', 'Number', 'from_address', 'points', 'reciver', 'sender', 'to_address'], 'string'],
             [['@version'], 'integer'],
-            [['Name', 'Note'], 'string', 'max' => 500],
-            [['Number'], 'string', 'max' => 255],
-            [['Date', 'points'], 'safe'],
+            [['Date'], 'safe'],
         ];
     }
 
@@ -133,11 +155,22 @@ class Deal extends ActiveRecord
     public function attributeLabels()
     {
         return [
-            'name' => 'Name',
-            'number' => 'Number',
+            '@class' => '@class',
+            '@rid' => '@rid',
+            '@version' => '@version',
+            'Date' => 'Date',
+            'Name' => 'Name',
+            'Note' => 'Note',
+            'Number' => 'Number',
+            'from_address' => 'From Address',
+            'points' => 'Points',
+            'reciver' => 'Reciver',
+            'sender' => 'Sender',
+            'to_address' => 'To Address',
         ];
     }
 }
+
 
 ```
 
@@ -160,7 +193,7 @@ echo \yii\widgets\LinkPager::widget([
 ```
 
 # Stability
-Not stable
+Beta
 
 # License
 The MIT License (MIT)
