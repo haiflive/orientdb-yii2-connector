@@ -1,0 +1,168 @@
+--
+-- ./console.sh /var/www/logistics/data/logistics.osql
+--
+-- DROP DATABASE plocal:../databases/logistics root 369
+-- Drop database from studio!
+
+CREATE DATABASE PLOCAL:../databases/logistics root 369 plocal graph
+-- connect PLOCAL:../databases/logistics root 369
+
+-- DB structure
+create class Deal extends V
+create class Expense extends V
+create class Price extends V
+create class Services extends V
+create class Organization extends V
+create class Address extends V
+create class Goods extends V
+create class Transport extends V
+create class Residents extends V
+
+
+-- realtions deal
+create property Deal.expenses EMBEDDEDLIST Expense
+create property Deal.sender EMBEDDED Organization
+create property Deal.reciver EMBEDDED Organization
+create property Deal.addressFrom EMBEDDED Address
+create property Deal.addressTo EMBEDDED Address
+create property Deal.goods EMBEDDEDLIST Goods
+create property Expense.prices EMBEDDEDLIST Price
+create property Expense.executor LINK Organization
+create property Price.service LINK Services
+create property Price.goods EMBEDDEDLIST Goods
+create property Price.transport EMBEDDED Transport
+create property Price.delivery LINK Address
+create property Transport.driver EMBEDDED Residents
+
+-- objects relations
+create property Organization.services LINKLIST Price
+
+-- Classes properties
+-- 
+create property Deal.Name string
+create property Deal.Number string
+create property Deal.Date DATE
+create property Deal.CurrencyCode string
+create property Deal.Note string
+-- 
+create property Services.Name string
+--
+create property Organization.role string
+create property Organization.OrganizationName string
+create property Organization.ShortName string
+create property Organization.Phone string
+create property Organization.Email string
+-- 
+create property Address.PostalCode string
+create property Address.CountryCode string
+create property Address.Region string
+create property Address.City string
+create property Address.StreetHouse string
+create property Address.LanguageCode string
+--
+create property Goods.GoodsShortDescription string
+create property Goods.GoodsDescription string
+create property Goods.AdditionalDescription string
+create property Goods.GoodsDescriptionGroop string
+create property Goods.GoodsQuantity DECIMAL
+create property Goods.MeasureUnitQualifierCode string
+create property Goods.MeasureUnitQualifierCost DECIMAL
+create property Goods.GoodsQuantity1 DECIMAL
+create property Goods.MeasureUnitQualifierCode1 string
+create property Goods.MeasureUnitQualifier1Cost DECIMAL
+create property Goods.GoodsQuantity2 DECIMAL
+create property Goods.MeasureUnitQualifierCode2 string
+create property Goods.MeasureUnitQualifier2Cost DECIMAL
+create property Goods.CommercialUnitQualifierCode string
+create property Goods.CommercialUnitQualifierCost DECIMAL
+create property Goods.CommercialQuantity DECIMAL
+create property Goods.MeasureUnitQualifierCodePay string
+create property Goods.useCode string
+create property Goods.codePrice string
+create property Goods.PriceKG DECIMAL
+create property Goods.Price DECIMAL
+create property Goods.Cost DECIMAL
+create property Goods.CustomsCost DECIMAL
+create property Goods.StatisticalCost DECIMAL
+create property Goods.GoodsTNVEDCode string
+create property Goods.GoodsAddTNVEDCode string
+create property Goods.DeliveryTime Date
+create property Goods.DeliveryTimeEND Date
+create property Goods.CurrencyCode string
+create property Goods.PlaceKind string
+create property Goods.PlacesQuantity INTEGER
+create property Goods.PlaceWeightQuantity DECIMAL
+create property Goods.PlaceNetWeightQuantity DECIMAL
+create property Goods.NetWeightQuantity DECIMAL
+create property Goods.GrossWeightQuantity DECIMAL
+create property Goods.NetWeightQuantity2 DECIMAL
+create property Goods.SupplementaryQualifierName string
+create property Goods.Discount DECIMAL
+create property Goods.OriginCountryCode INTEGER
+create property Goods.PlaceGoodsQuantity DECIMAL
+create property Goods.Length DECIMAL
+create property Goods.Width DECIMAL
+create property Goods.Height DECIMAL
+create property Goods.GoodsVolume DECIMAL
+create property Goods.VolumeUnitQualifierName string
+create property Goods.PlacesDescription string
+create property Goods.PackingCode string
+create property Goods.PlacesPartQuantity INTEGER
+create property Goods.HazardousCargoCode string
+create property Goods.PackingMark string
+create property Goods.GoodsClassificationCode INTEGER
+create property Goods.AdditionalSign INTEGER
+create property Goods.IntellectPropertySign INTEGER
+create property Goods.BeginPeriodDate Date
+create property Goods.EndPeriodDate Date
+create property Goods.CustomsCostCorrectMethod string
+create property Goods.QuantityFact DECIMAL
+create property Goods.Manufacturer string
+create property Goods.TradeMark string
+create property Goods.GoodsMark string
+create property Goods.GoodsModel string
+create property Goods.GoodsMarking string
+create property Goods.GoodsStandart string
+create property Goods.GoodsSort string
+create property Goods.WoodSortiment string
+create property Goods.WoodKind string
+create property Goods.Dimensions string
+create property Goods.DateIssue Date
+create property Goods.SerialNumber string
+create property Goods.CustomsTax string
+create property Goods.CustomsDuty string
+create property Goods.Excise string
+create property Goods.Rate string
+create property Goods.LanguageGoods string
+create property Goods.PakagePartQuantity INTEGER
+create property Goods.QuotaQuantity DECIMAL
+create property Goods.QuotaMeasureUnitQualifierCode string
+create property Goods.QuotaCurrencyQuantity DECIMAL
+create property Goods.QuotaCurrencyCode string
+create property Goods.PrecedingCustomsModeCode string
+create property Goods.GoodsTransferFeature string
+create property Goods.OilField string
+create property Goods.RKTNVED string
+create property Goods.goodsArticul string
+create property Goods.OneWeight DECIMAL
+create property Goods.TareWeight DECIMAL
+create property Goods.CreateDate Datetime
+create property Goods.Favorite INTEGER
+create property Goods.tags string
+--
+create property Transport.TransportIdentifier string
+--
+create property Residents.PersonSurname string
+create property Residents.PersonName string
+create property Residents.PersonMiddleName string
+create property Residents.PersonPost string
+create property Residents.ContactPhone string
+create property Residents.dateOfBirth Date
+create property Residents.sex string
+create property Residents.email string
+--
+create property Expense.Name string
+create property Expense.Price DECIMAL
+create property Expense.CurrencyCode string
+create property Expense.Margin DECIMAL
+create property Expense.Cost DECIMAL
