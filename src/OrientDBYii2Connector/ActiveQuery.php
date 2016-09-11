@@ -139,9 +139,6 @@ class ActiveQuery extends Query implements ActiveQueryInterface
             $link = $this->link;
             $models = [];
             foreach ($primaryModels as $i => $primaryModel) {
-                $test;
-                var_dump($link);
-                die();
                 if ($this->multiple && count($link) === 1 && is_array($rows = $primaryModel[$link])) {
                     $model = $this->populate($rows);
                     $value = $model ?: $this->all();
