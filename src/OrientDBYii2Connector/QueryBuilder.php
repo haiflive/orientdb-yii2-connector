@@ -95,13 +95,15 @@ class QueryBuilder extends \yii\base\Object
                 $params[$phName] = $value;
             }
         }
+        // `DEFAULT VALUES` :
+        // `INSERT INTO Price CONTENT {"@class":"Price","@version":0,"@rid":"#-1:-1"}`
         
         if(empty($placeholders))
             throw new OrientDBException(__CLASS__ . " Error. DEFAULT VALUES not supported");
         
         return 'INSERT INTO ' . $this->db->quoteTableName($table)
             . (!empty($names) ? ' (' . implode(', ', $names) . ')' : '')
-            . (!empty($placeholders) ? ' VALUES (' . implode(', ', $placeholders) . ')' : ' DEFAULT VALUES');
+            . (!empty($placeholders) ? ' VALUES (' . implode(', ', $placeholders) . ')' : ' CONTENT {"@class":"' . $table . '","@version":0,"@rid":"#-1:-1"}');
     }
 
     public function update($table, $columns, $condition, &$params)

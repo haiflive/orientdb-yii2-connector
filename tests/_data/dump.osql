@@ -16,7 +16,7 @@ create class Organization extends V
 create class Address extends V
 create class Goods extends V
 create class Transport extends V
-create class Residents extends V
+create class Resident extends V
 
 
 -- realtions deal
@@ -32,7 +32,7 @@ create property Price.service LINK Services
 create property Price.goods EMBEDDEDLIST Goods
 create property Price.transport EMBEDDED Transport
 create property Price.delivery LINK Address
-create property Transport.driver EMBEDDED Residents
+create property Transport.driver EMBEDDED Resident
 
 -- objects relations
 create property Organization.services LINKLIST Price
@@ -152,17 +152,23 @@ create property Goods.tags string
 --
 create property Transport.TransportIdentifier string
 --
-create property Residents.PersonSurname string
-create property Residents.PersonName string
-create property Residents.PersonMiddleName string
-create property Residents.PersonPost string
-create property Residents.ContactPhone string
-create property Residents.dateOfBirth Date
-create property Residents.sex string
-create property Residents.email string
+create property Resident.PersonSurname string
+create property Resident.PersonName string
+create property Resident.PersonMiddleName string
+create property Resident.PersonPost string
+create property Resident.ContactPhone string
+create property Resident.dateOfBirth Date
+create property Resident.sex string
+create property Resident.email string
 --
 create property Expense.Name string
 create property Expense.Price DECIMAL
 create property Expense.CurrencyCode string
 create property Expense.Margin DECIMAL
 create property Expense.Cost DECIMAL
+--
+create property Price.Price DECIMAL
+create property Price.Cost DECIMAL
+create property Price.Discount INTEGER
+create property Price.QuantityMeasure INTEGER
+create property Price.Quantity DECIMAL

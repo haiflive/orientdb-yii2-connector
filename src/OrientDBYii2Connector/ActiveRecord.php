@@ -75,6 +75,26 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
         return parent::__get($name);
     }
     
+    /*
+    public function __get($name)
+    {
+        if (isset($this->_attributes[$name]) || array_key_exists($name, $this->_attributes)) {
+            return $this->_attributes[$name];
+        } elseif ($this->hasAttribute($name)) {
+            return null;
+        } else {
+            if (isset($this->_related[$name]) || array_key_exists($name, $this->_related)) {
+                return $this->_related[$name];
+            }
+            $value = parent::__get($name);
+            if ($value instanceof ActiveQueryInterface) {
+                return $this->_related[$name] = $value->findFor($name, $this);
+            } else {
+                return $value;
+            }
+        }
+    }
+    */
     protected function isArrayOfRid($property)
     {
         if(!is_array($property))

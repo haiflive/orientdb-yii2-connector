@@ -95,6 +95,7 @@ class ActiveQuery extends Query implements ActiveQueryInterface
     {
         $primaryModel = new $this->modelClass;
         $relations = $this->normalizeRelations($primaryModel, $with);
+        
         /* @var $relation ActiveQuery */
         foreach ($relations as $name => $relation) {
             if ($relation->asArray === null) {
@@ -107,6 +108,13 @@ class ActiveQuery extends Query implements ActiveQueryInterface
     
     public function populateRelation($name, &$primaryModels)
     {
+        // if (!is_array($this->link)) {
+            // throw new InvalidConfigException('Invalid link: it must be an array of key-value pairs.');
+        // }
+        
+        // viaTable not need int this database
+        // $this->filterByModels($primaryModels);
+        
         //! BUG need recursive
         if (!$this->multiple && count($primaryModels) === 1) {
             foreach ($primaryModels as $i => $primaryModel) {
@@ -131,6 +139,9 @@ class ActiveQuery extends Query implements ActiveQueryInterface
             $link = $this->link;
             $models = [];
             foreach ($primaryModels as $i => $primaryModel) {
+                $test;
+                var_dump($link);
+                die();
                 if ($this->multiple && count($link) === 1 && is_array($rows = $primaryModel[$link])) {
                     $model = $this->populate($rows);
                     $value = $model ?: $this->all();

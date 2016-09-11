@@ -1,6 +1,6 @@
 <?php
 
-namespace app\models;
+namespace data;
 
 use Yii;
 
@@ -10,6 +10,11 @@ use Yii;
  * @property string $@class
  * @property string $@rid
  * @property integer $@version
+ * @property string $Cost
+ * @property integer $Discount
+ * @property string $Price
+ * @property string $Quantity
+ * @property integer $QuantityMeasure
  * @property string $delivery
  * @property string $goods
  * @property string $service
@@ -40,7 +45,8 @@ class oPrice extends \OrientDBYii2Connector\ActiveRecord
     {
         return [
             [['@class', '@rid', 'delivery', 'goods', 'service', 'transport'], 'string'],
-            [['@version'], 'integer'],
+            [['@version', 'Discount', 'QuantityMeasure'], 'integer'],
+            [['Cost', 'Price', 'Quantity'], 'number'],
         ];
     }
 
@@ -53,6 +59,11 @@ class oPrice extends \OrientDBYii2Connector\ActiveRecord
             '@class' => '@class',
             '@rid' => '@rid',
             '@version' => '@version',
+            'Cost' => 'Cost',
+            'Discount' => 'Discount',
+            'Price' => 'Price',
+            'Quantity' => 'Quantity',
+            'QuantityMeasure' => 'Quantity Measure',
             'delivery' => 'Delivery',
             'goods' => 'Goods',
             'service' => 'Service',

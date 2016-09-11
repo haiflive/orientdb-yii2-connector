@@ -3,15 +3,22 @@
 namespace tests\codeception\unit\models;
 
 use yii\codeception\TestCase;
-use data\tOrganization;
-use data\tExpense;
-use data\tGoods;
-use data\tAddress;
-use data\tServices;
-use data\tPrice;
-use data\tTransport;
-use data\tResident;
-use data\tDeal;
+use data\oOrganization;
+use data\oExpense;
+use data\oGoods;
+use data\oAddress;
+use data\oServices;
+use data\oPrice;
+use data\oTransport;
+use data\oResident;
+use data\oDeal;
+
+/**
+ *  example run single test
+ *  > codecept run unit models/oDealTest:testCreatePrice --debug
+ *  debugging:
+ *  codecept_debug($post);
+ */
 
 class oDealTest extends TestCase
 {
@@ -21,7 +28,7 @@ class oDealTest extends TestCase
     {
         //simulate form input
         $post = [
-            'tOrganization' => [
+            'oOrganization' => [
                 'role' => 'buyer',
                 'Country' => '643',
                 'OrganizationName' => 'Sender organization full name',
@@ -35,7 +42,7 @@ class oDealTest extends TestCase
             ]
         ];
         
-        $organization = new tOrganization;
+        $organization = new oOrganization;
         
         $this->assertTrue($organization->load($post), 'Load organization POST data');
         $this->assertTrue($organization->validate(),  'Validate organization');
@@ -48,7 +55,7 @@ class oDealTest extends TestCase
     {
         //simulate form input
         $post = [
-            'tOrganization' => [
+            'oOrganization' => [
                 'role' => 'seller',
                 'Country' => '156',
                 'OrganizationName' => 'Reciver organization full name',
@@ -61,7 +68,7 @@ class oDealTest extends TestCase
             ]
         ];
         
-        $organization = new tOrganization;
+        $organization = new oOrganization;
         
         $this->assertTrue($organization->load($post), 'Load organization POST data');
         $this->assertTrue($organization->validate(),  'Validate organization');
@@ -74,7 +81,7 @@ class oDealTest extends TestCase
     {
         //simulate form input
         $post = [
-            'tOrganization' => [
+            'oOrganization' => [
                 'role' => 'default',
                 'Country' => '156',
                 'OrganizationName' => 'Executor organization full name',
@@ -87,7 +94,7 @@ class oDealTest extends TestCase
             ]
         ];
         
-        $organization = new tOrganization;
+        $organization = new oOrganization;
         
         $this->assertTrue($organization->load($post), 'Load organization POST data');
         $this->assertTrue($organization->validate(),  'Validate organization');
@@ -100,7 +107,7 @@ class oDealTest extends TestCase
     {
         //simulate form input
         $post = [
-            'tAddress' => [
+            'oAddress' => [
                 'PostalCode' => '692500',
                 'CountryCode' => 'RU',
                 'Region' => 'Primorsky kray',
@@ -110,7 +117,7 @@ class oDealTest extends TestCase
             ]
         ];
         
-        $address = new tAddress;
+        $address = new oAddress;
         
         $this->assertTrue($address->load($post), 'Load address POST data');
         $this->assertTrue($address->validate(),  'Validate address');
@@ -123,7 +130,7 @@ class oDealTest extends TestCase
     {
         //simulate form input
         $post = [
-            'tExpense' => [
+            'oExpense' => [
                 'Name' => 'Test Expense',
                 'Price' => '100.00',
                 'CurrencyCode' => 'USD',
@@ -132,7 +139,7 @@ class oDealTest extends TestCase
             ]
         ];
         
-        $expense = new tExpense;
+        $expense = new oExpense;
         
         $this->assertTrue($expense->load($post), 'Load expense POST data');
         $this->assertTrue($expense->validate(),  'Validate expense');
@@ -145,7 +152,7 @@ class oDealTest extends TestCase
     {
         //simulate form input
         $post = [
-            'tGoods' => [
+            'oGoods' => [
                 'GoodsShortDescription' => 'Test Goods Short Description',
                 'GoodsDescription' => 'Full text Goods Description',
                 'GoodsQuantity' => '100',
@@ -172,7 +179,7 @@ class oDealTest extends TestCase
             ]
         ];
         
-        $good = new tGoods;
+        $good = new oGoods;
         
         $this->assertTrue($good->load($post), 'Load good POST data');
         $this->assertTrue($good->validate(),  'Validate good');
@@ -185,12 +192,12 @@ class oDealTest extends TestCase
     {
         //simulate form input
         $post = [
-            'tServices' => [
+            'oServices' => [
                 'Name' => 'Service name'
             ]
         ];
         
-        $services = new tServices;
+        $services = new oServices;
         
         $this->assertTrue($services->load($post), 'Load services POST data');
         $this->assertTrue($services->validate(),  'Validate services');
@@ -203,16 +210,16 @@ class oDealTest extends TestCase
     {
         //simulate form input
         $post = [
-            'tPrice' => [
+            'oPrice' => [
                 'Price' => '110.00',
                 'Cost' => '100.00',
                 'Discount' => '0',
                 'QuantityMeasure' => '796',
-                'Quantity' => '1'
+                'Quantity' => '1.00'
             ]
         ];
         
-        $price = new tPrice;
+        $price = new oPrice;
         
         $this->assertTrue($price->load($post), 'Load price POST data');
         $this->assertTrue($price->validate(),  'Validate price');
@@ -225,7 +232,7 @@ class oDealTest extends TestCase
     {
         //simulate form input
         $post = [
-            'tTransport' => [
+            'oTransport' => [
                 'TransportIdentifier' => 'AB0202AM23',
                 'NameMrkCar' => 'KAMAZ',
                 'model' => '2207',
@@ -235,7 +242,7 @@ class oDealTest extends TestCase
             ]
         ];
         
-        $transport = new tTransport;
+        $transport = new oTransport;
         
         $this->assertTrue($transport->load($post), 'Load transport POST data');
         $this->assertTrue($transport->validate(),  'Validate transport');
@@ -248,7 +255,7 @@ class oDealTest extends TestCase
     {
         //simulate form input
         $post = [
-            'tResident' => [
+            'oResident' => [
                 'role' => '2',
                 'PersonSurname' => 'Ivanov',
                 'PersonName' => 'Ivan',
@@ -260,7 +267,7 @@ class oDealTest extends TestCase
             ]
         ];
         
-        $resident = new tResident;
+        $resident = new oResident;
         
         $this->assertTrue($resident->load($post), 'Load resident POST data');
         $this->assertTrue($resident->validate(),  'Validate resident');

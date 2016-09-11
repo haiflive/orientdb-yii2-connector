@@ -5,7 +5,7 @@ namespace app\models;
 use Yii;
 
 /**
- * This is the model class for table "Residents".
+ * This is the model class for table "Resident".
  *
  * @property string $@class
  * @property string $@rid
@@ -19,14 +19,14 @@ use Yii;
  * @property string $email
  * @property string $sex
  */
-class oResidents extends \OrientDBYii2Connector\ActiveRecord
+class oResident extends \OrientDBYii2Connector\ActiveRecord
 {
     /**
      * @inheritdoc
      */
     public static function tableName()
     {
-        return 'Residents';
+        return 'Resident';
     }
 
     /**
