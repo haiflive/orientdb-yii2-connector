@@ -3,7 +3,7 @@
     "description": "Yii2 connector to orientDB, php7, query builder, command builder",
     "type": "library",
     "require": {
-        "ostico/phporient": "v1.2.3"
+        "ostico/phporient": "dev-master"
     },
     "license": "MIT",
     "authors": [
