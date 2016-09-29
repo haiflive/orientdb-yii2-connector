@@ -98,8 +98,8 @@ class QueryBuilder extends \yii\base\Object
         // `DEFAULT VALUES` :
         // `INSERT INTO Price CONTENT {"@class":"Price","@version":0,"@rid":"#-1:-1"}`
         
-        if(empty($placeholders))
-            throw new OrientDBException(__CLASS__ . " Error. DEFAULT VALUES not supported");
+        // if(empty($placeholders))
+            // throw new OrientDBException(__CLASS__ . " Error. DEFAULT VALUES not supported");
         
         return 'INSERT INTO ' . $this->db->quoteTableName($table)
             . (!empty($names) ? ' (' . implode(', ', $names) . ')' : '')

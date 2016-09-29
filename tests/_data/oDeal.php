@@ -46,9 +46,9 @@ class oDeal extends \OrientDBYii2Connector\ActiveRecord
     public function rules()
     {
         return [
-            [['@class', '@rid', 'CurrencyCode', 'Name', 'Note', 'Number', 'addressFrom', 'addressTo', 'expenses', 'goods', 'reciver', 'sender'], 'string'],
+            [['@class', '@rid', 'CurrencyCode', 'Name', 'Note', 'Number'], 'string'],
             [['@version'], 'integer'],
-            [['Date'], 'safe'],
+            [['Date', 'addressFrom', 'addressTo', 'expenses', 'goods', 'reciver', 'sender'], 'safe'],
         ];
     }
 

@@ -101,6 +101,8 @@ class QuotaOrientDB
             }
             
             return $embeddedData;
+        } else if(!empty($embeddedData) && isset($embeddedData[0]) && !is_array($embeddedData[0])) { // check it may bee error
+            throw new OrientDBException(__CLASS__ . " embedded relation require `@class` param");
         }
         
         // this embedded list:

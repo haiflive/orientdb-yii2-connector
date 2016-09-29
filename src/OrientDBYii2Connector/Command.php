@@ -100,6 +100,7 @@ class Command extends Component
         }
         
         $sql = $this->_sql;
+        $params = array_reverse($params); // replace first `:qp100` then `:qp10` then `:qp1`
         foreach($params as $name => $value) {
             $sql = str_replace($name, $value, $sql);
         }
