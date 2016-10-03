@@ -269,7 +269,7 @@ class tDealTest extends TestCase
         return $resident;
     }
     
-    /**
+    /* --->*
      * @depends testCreateSender
      * @depends testCreateReciver
      * @depends testCreateExecutor
@@ -365,7 +365,7 @@ class tDealTest extends TestCase
         return $deal;
     }
     
-    /**
+    /* --->*
      * @depends testCreateDeal
      */
     public function testCreateAndLoadDealWithRelations()

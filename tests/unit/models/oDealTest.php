@@ -403,7 +403,97 @@ class oDealTest extends TestCase
                     'Price' => '100.00',
                     'CurrencyCode' => 'USD',
                     'Margin' => '0',
-                    'Cost' => '100.00'
+                    'Cost' => '100.00',
+                    'prices' => [[ // has_many
+                            '@class'=>'Price', //!
+                            'Price' => '110.00',
+                            'Cost' => '100.00',
+                            'Discount' => '0',
+                            'QuantityMeasure' => '796',
+                            'Quantity' => '1',
+                            'transport' => [
+                                '@class'=>'Transport', //!
+                                'TransportIdentifier' => 'AB0202AM23',
+                                'NameMrkCar' => 'KAMAZ',
+                                'model' => '2207',
+                                'volume' => '10000',
+                                'mass' => '4000',
+                                'Note' => 'Truck',
+                                'driver' => [
+                                    '@class'=>'Resident', //!
+                                    'role' => '2',
+                                    'PersonSurname' => 'Ivanov',
+                                    'PersonName' => 'Ivan',
+                                    'PersonMiddleName' => 'Ivanovich',
+                                    'PersonPost' => 'Driver',
+                                    'ContactPhone' => '+7878787777',
+                                    'sex' => 'male',
+                                    'email' => 'ivanov_1978@test.te'
+                                ]
+                            ],
+                            'goods' => [[
+                                    '@class'=>'Goods', //!
+                                    'GoodsShortDescription' => 'Test Goods Short Description',
+                                    'GoodsDescription' => 'Full text Goods Description',
+                                    'GoodsQuantity' => '100',
+                                    'MeasureUnitQualifierCode' => '796',
+                                    'MeasureUnitQualifierCost' => '10',
+                                    'Price' => '10',
+                                    'Cost' => '9.8',
+                                    'GoodsTNVEDCode' => '8467211000',
+                                    'GoodsAddTNVEDCode' => '0000',
+                                    'CurrencyCode' => 'USD',
+                                    'PlacesQuantity' => '56',
+                                    'Length' => '1000',
+                                    'Width' => '15000',
+                                    'Height' => '23000',
+                                    'PackingCode' => 'CT',
+                                    'Manufacturer' => 'SHENZHEN YOYI TOOLS INDUSTRY CO., LTD',
+                                    'TradeMark' => 'noname',
+                                    'GoodsMark' => '37',
+                                    'GoodsModel' => 'X7',
+                                    'GoodsMarking' => '00-37-445',
+                                    'DateIssue' => date('Y-m-d'),
+                                    'SerialNumber' => '00011111122',
+                                    'goodsArticul' => '213-000037',
+                                    'Favorite' => '1' // BUG INTEGER
+                                ],[
+                                    '@class'=>'Goods', //!
+                                    'GoodsShortDescription' => 'Test Goods Short Description',
+                                    'GoodsDescription' => 'Full text Goods Description',
+                                    'GoodsQuantity' => '100',
+                                    'MeasureUnitQualifierCode' => '796',
+                                    'MeasureUnitQualifierCost' => '10',
+                                    'Price' => '10',
+                                    'Cost' => '9.8',
+                                    'GoodsTNVEDCode' => '8467211000',
+                                    'GoodsAddTNVEDCode' => '0000',
+                                    'CurrencyCode' => 'USD',
+                                    'PlacesQuantity' => '56',
+                                    'Length' => '1000',
+                                    'Width' => '15000',
+                                    'Height' => '23000',
+                                    'PackingCode' => 'CT',
+                                    'Manufacturer' => 'SHENZHEN YOYI TOOLS INDUSTRY CO., LTD',
+                                    'TradeMark' => 'noname',
+                                    'GoodsMark' => '37',
+                                    'GoodsModel' => 'X7',
+                                    'GoodsMarking' => '00-37-445',
+                                    'DateIssue' => date('Y-m-d'),
+                                    'SerialNumber' => '00011111122',
+                                    'goodsArticul' => '213-000037',
+                                    'Favorite' => '1' // BUG INTEGER
+                                ]
+                            ]
+                        ],[
+                            '@class'=>'Price', //!
+                            'Price' => '110.00',
+                            'Cost' => '100.00',
+                            'Discount' => '0',
+                            'QuantityMeasure' => '796',
+                            'Quantity' => '1'
+                        ]
+                    ]
                 ],[
                     '@class'=>'Expense', //!
                     'Name' => 'Test Expense',
@@ -422,5 +512,53 @@ class oDealTest extends TestCase
         $this->assertTrue($deal->save(),      'Create deal');
         
         return $deal;
+    }
+    
+    /* --->*
+     * @depends testCreateDeal
+     */
+    public function testCreateAndLoadDealWithRelations()
+    {
+        // create deals with relation data
+        for($i=0; $i < 2; $i++) {
+            $this->testCreateDeal();
+        }
+        
+        // test Eager Loading
+        $deals = oDeal::find()
+            ->limit(100)
+            ->orderBy('@rid DESC')
+            ->all();
+        
+        $this->assertTrue(
+                    $deals[0]->sender['role'] == 'buyer'
+                &&  $deals[0]->sender['Country'] == '643'
+                &&  $deals[0]->sender['OrganizationName'] == 'Sender organization full name'
+                &&  $deals[0]->sender['ShortName'] == 'Sender organization'
+            , 'Check sender by deal');
+        
+        $this->assertTrue(
+                    $deals[0]->reciver['role'] == 'seller'
+                &&  $deals[0]->reciver['Country'] == '156'
+                &&  $deals[0]->reciver['OrganizationName'] == 'Reciver organization full name'
+                &&  $deals[0]->reciver['ShortName'] == 'Reciver organization'
+            , 'Check reciver by deal');
+        
+        $this->assertTrue(
+                    $deals[0]->expenses[0]['prices'][0]['transport']['driver']['PersonSurname'] == 'Ivanov'
+                &&  $deals[0]->expenses[0]['prices'][0]['transport']['driver']['PersonName'] == 'Ivan'
+                &&  $deals[0]->expenses[0]['prices'][0]['transport']['driver']['PersonMiddleName'] == 'Ivanovich'
+                &&  $deals[0]->expenses[0]['prices'][0]['transport']['driver']['PersonPost'] == 'Driver'
+            , 'Check driver by deal');
+        
+        $this->assertTrue(
+                    $deals[0]->expenses[0]['prices'][0]['goods'][0]['GoodsShortDescription'] == 'Test Goods Short Description'
+                &&  $deals[0]->expenses[0]['prices'][0]['goods'][0]['GoodsDescription'] == 'Full text Goods Description'
+                &&  $deals[0]->expenses[0]['prices'][0]['goods'][0]['GoodsQuantity'] == '100'
+                &&  $deals[0]->expenses[0]['prices'][0]['goods'][0]['MeasureUnitQualifierCode'] == '796'
+                &&  $deals[0]->expenses[0]['prices'][0]['goods'][0]['MeasureUnitQualifierCost'] == '10'
+                &&  $deals[0]->expenses[0]['prices'][0]['goods'][0]['Price'] == '10'
+                &&  $deals[0]->expenses[0]['prices'][0]['goods'][0]['Cost'] == '9.8'
+            , 'Check goods by price by deal');
     }
 }
