@@ -29,6 +29,16 @@ class oPrice extends \OrientDBYii2Connector\ActiveRecord
     {
         return 'Price';
     }
+    
+    public function getTransport()
+    {
+        return $this->hasOne(oTransport::className(), 'transport');
+    }
+    
+    public function getGoods()
+    {
+        return $this->hasMany(oGoods::className(), 'goods');
+    }
 
     /**
      * @return \yii\db\Connection the database connection used by this AR class.
@@ -44,9 +54,12 @@ class oPrice extends \OrientDBYii2Connector\ActiveRecord
     public function rules()
     {
         return [
-            [['@class', '@rid', 'delivery', 'goods', 'service', 'transport'], 'string'],
+            [['@class', '@rid'], 'string'],
             [['@version', 'Discount', 'QuantityMeasure'], 'integer'],
             [['Cost', 'Price', 'Quantity'], 'number'],
+            [['delivery', 'service',
+//                'transport', 'goods'
+            ], 'safe']
         ];
     }
 

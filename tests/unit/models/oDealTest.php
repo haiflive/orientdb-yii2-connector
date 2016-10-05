@@ -561,4 +561,112 @@ class oDealTest extends TestCase
                 &&  $deals[0]->expenses[0]['prices'][0]['goods'][0]['Cost'] == '9.8'
             , 'Check goods by price by deal');
     }
+    
+    public function testEmbeddedRelation()
+    {
+        //simulate form input
+        $post = [
+            'oPrice' => [
+                'Price' => '10.00',
+                'Cost' => '10.00',
+                'Discount' => '0',
+                'QuantityMeasure' => '796',
+                'Quantity' => '11.00',
+//                'transport' => [
+//                    '@class'=>'Transport', //!
+//                    'TransportIdentifier' => 'AB0202AM23',
+//                    'NameMrkCar' => 'KAMAZ',
+//                    'model' => '2207',
+//                    'volume' => '10000',
+//                    'mass' => '4000',
+//                    'Note' => 'Truck'
+//                ],
+            ]
+        ];
+        
+        $price = new oPrice;
+
+        $price->transport = [
+            '@class'=>'Transport', //!
+            'TransportIdentifier' => 'AB0202AM23',
+            'NameMrkCar' => 'KAMAZ',
+            'model' => '2207',
+            'volume' => '10000',
+            'mass' => '4000',
+            'Note' => 'Truck'
+        ];
+        
+        $this->assertTrue($price->load($post), 'Load price POST data');
+        $this->assertTrue($price->validate(),  'Validate price');
+        $this->assertTrue($price->save(),      'Create price');
+        
+        $priceFind = oPrice::find()
+                        ->where(['@rid' => $price['@rid']])
+                        ->with(['transport'])
+                        ->one();
+
+        $this->assertTrue($priceFind->QuantityMeasure == '796', 'Check QuantityMeasure');
+        $this->assertTrue($priceFind->transport->TransportIdentifier == 'AB0202AM23', 'Check relation embedded transport->TransportIdentifier');
+        
+        return $priceFind;
+    }
+    
+    public function testEmbeddedListRelation()
+    {
+        //simulate form input
+        $post = [
+            'oPrice' => [
+                'Price' => '2.00',
+                'Cost' => '22.00',
+                'Discount' => '0',
+                'QuantityMeasure' => '796',
+                'Quantity' => '2.00',
+//                'goods' => [[
+//                        '@class'=>'Goods', //!
+//                        'GoodsShortDescription' => 'Test Goods Short Description',
+//                        'GoodsDescription' => 'Full text Goods Description',
+//                        'GoodsQuantity' => '100',
+//                        'MeasureUnitQualifierCode' => '796',
+//                    ],[
+//                        '@class'=>'Goods', //!
+//                        'GoodsShortDescription' => 'Test Goods Short Description 2',
+//                        'GoodsDescription' => 'Full text Goods Description 2',
+//                        'GoodsQuantity' => '200',
+//                        'MeasureUnitQualifierCode' => '796',
+//                    ]
+//                ]
+            ]
+        ];
+        
+        $price = new oPrice;
+
+        $price->goods = [[
+            '@class'=>'Goods', //!
+            'GoodsShortDescription' => 'Test Goods Short Description',
+            'GoodsDescription' => 'Full text Goods Description',
+            'GoodsQuantity' => '100',
+            'MeasureUnitQualifierCode' => '796',
+        ],[
+            '@class'=>'Goods', //!
+            'GoodsShortDescription' => 'Test Goods Short Description 2',
+            'GoodsDescription' => 'Full text Goods Description 2',
+            'GoodsQuantity' => '200',
+            'MeasureUnitQualifierCode' => '796',
+        ]
+        ];
+
+        $this->assertTrue($price->load($post), 'Load price POST data');
+        $this->assertTrue($price->validate(),  'Validate price');
+        $this->assertTrue($price->save(),      'Create price');
+
+        $priceFind = oPrice::find()
+                        ->where(['@rid' => $price['@rid']])
+                        ->with(['goods'])
+                        ->one();
+        
+        $this->assertTrue($priceFind->QuantityMeasure == '796', 'Check QuantityMeasure');
+        $this->assertTrue($priceFind->goods[0]->GoodsQuantity == '100', 'Check relation embedded goods[0]->GoodsQuantity');
+        
+        return $priceFind;
+    }
 }

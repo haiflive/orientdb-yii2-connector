@@ -151,6 +151,24 @@ create property Goods.Favorite INTEGER
 create property Goods.tags string
 --
 create property Transport.TransportIdentifier string
+create property Transport.TrailerIdentifier string
+create property Transport.SecondTrailerIdentifier string
+create property Transport.TransportModeCode string
+create property Transport.TransportMeansNationalityCode string
+create property Transport.VINID string
+create property Transport.PakageTypeCode INTEGER
+create property Transport.ContainerKind string
+create property Transport.Capacity INTEGER
+create property Transport.EuroPalletCapacity INTEGER
+create property Transport.type INTEGER
+create property Transport.NameMrkCar string
+create property Transport.model string
+create property Transport.volume DECIMAL
+create property Transport.mass DECIMAL
+create property Transport.submersible INTEGER
+create property Transport.Note string
+create property Transport.CreateDate Date
+
 --
 create property Resident.PersonSurname string
 create property Resident.PersonName string

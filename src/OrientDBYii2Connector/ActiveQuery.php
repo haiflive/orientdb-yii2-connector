@@ -77,7 +77,7 @@ class ActiveQuery extends Query implements ActiveQueryInterface
 
         $models = $this->createModels($rows);
         // if (!empty($this->join) && $this->indexBy === null) {
-            // $models = $this->removeDuplicatedModels($models);
+            // $models = $this->removeDuplicatedModels($models); // not need in this database
         // }
         if (!empty($this->with)) {
             $this->findWith($this->with, $models);
@@ -95,13 +95,14 @@ class ActiveQuery extends Query implements ActiveQueryInterface
     {
         $primaryModel = new $this->modelClass;
         $relations = $this->normalizeRelations($primaryModel, $with);
-        
+
         /* @var $relation ActiveQuery */
         foreach ($relations as $name => $relation) {
             if ($relation->asArray === null) {
                 // inherit asArray from primary query
                 $relation->asArray($this->asArray);
             }
+
             $relation->populateRelation($name, $models);
         }
     }
@@ -118,6 +119,7 @@ class ActiveQuery extends Query implements ActiveQueryInterface
         //! BUG need recursive
         if (!$this->multiple && count($primaryModels) === 1) {
             foreach ($primaryModels as $i => $primaryModel) {
+
                 if ($primaryModel instanceof ActiveRecordInterface) { // ??? for what
                     $model = $this->one();
                     $primaryModel->populateRelation($name, $model);
@@ -138,6 +140,7 @@ class ActiveQuery extends Query implements ActiveQueryInterface
         } else {
             $link = $this->link;
             $models = [];
+
             foreach ($primaryModels as $i => $primaryModel) {
                 if ($this->multiple && count($link) === 1 && is_array($rows = $primaryModel[$link])) {
                     $model = $this->populate($rows);
