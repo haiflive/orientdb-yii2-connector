@@ -20,6 +20,11 @@ use Yii;
  */
 class oExpense extends \OrientDBYii2Connector\ActiveRecord
 {
+    public function getPrices()
+    {
+        return $this->embeddedMany(oPrice::className(), 'prices');
+    }
+
     /**
      * @inheritdoc
      */
@@ -42,9 +47,10 @@ class oExpense extends \OrientDBYii2Connector\ActiveRecord
     public function rules()
     {
         return [
-            [['@class', '@rid', 'CurrencyCode', 'Name', 'executor', 'prices'], 'string'],
+            [['@class', '@rid', 'CurrencyCode', 'Name', 'executor'], 'string'],
             [['@version'], 'integer'],
             [['Cost', 'Margin', 'Price'], 'number'],
+            [['prices'], 'safe'],
         ];
     }
 

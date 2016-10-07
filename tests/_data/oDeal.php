@@ -40,6 +40,36 @@ class oDeal extends \OrientDBYii2Connector\ActiveRecord
         return Yii::$app->get('dborient');
     }
 
+    public function getSender()
+    {
+        return $this->embeddedOne(oOrganization::className(), 'sender');
+    }
+
+    public function getReciver()
+    {
+        return $this->embeddedOne(oOrganization::className(), 'reciver');
+    }
+
+    public function getAddressTo()
+    {
+        return $this->embeddedOne(oAddress::className(), 'reciver');
+    }
+
+    public function getAddressFrom()
+    {
+        return $this->embeddedOne(oAddress::className(), 'reciver');
+    }
+
+    public function getGoods()
+    {
+        return $this->embeddedMany(oGoods::className(), 'goods');
+    }
+
+    public function getExpenses()
+    {
+        return $this->embeddedMany(oExpense::className(), 'expenses');
+    }
+
     /**
      * @inheritdoc
      */
@@ -48,7 +78,9 @@ class oDeal extends \OrientDBYii2Connector\ActiveRecord
         return [
             [['@class', '@rid', 'CurrencyCode', 'Name', 'Note', 'Number'], 'string'],
             [['@version'], 'integer'],
-            [['Date', 'addressFrom', 'addressTo', 'expenses', 'goods', 'reciver', 'sender'], 'safe'],
+            [['Date',
+//                'addressFrom', 'addressTo', 'expenses', 'goods', 'reciver', 'sender'
+            ], 'safe'],
         ];
     }
 

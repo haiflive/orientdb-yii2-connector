@@ -40,6 +40,11 @@ class oPrice extends \OrientDBYii2Connector\ActiveRecord
         return $this->embeddedMany(oGoods::className(), 'goods');
     }
 
+    public function getDelivery()
+    {
+        return $this->embeddedOne(oAddress::className(), 'delivery');
+    }
+
     /**
      * @return \yii\db\Connection the database connection used by this AR class.
      */

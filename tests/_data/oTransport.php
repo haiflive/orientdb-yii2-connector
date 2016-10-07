@@ -32,6 +32,11 @@ use Yii;
  */
 class oTransport extends \OrientDBYii2Connector\ActiveRecord
 {
+    public function getDriver()
+    {
+        return $this->embeddedOne(oResident::className(), 'driver');
+    }
+
     /**
      * @inheritdoc
      */
@@ -54,9 +59,11 @@ class oTransport extends \OrientDBYii2Connector\ActiveRecord
     public function rules()
     {
         return [
-            [['@class', '@rid', 'ContainerKind', 'NameMrkCar', 'Note', 'SecondTrailerIdentifier', 'TrailerIdentifier', 'TransportIdentifier', 'TransportMeansNationalityCode', 'TransportModeCode', 'VINID', 'driver', 'model'], 'string'],
+            [['@class', '@rid', 'ContainerKind', 'NameMrkCar', 'Note', 'SecondTrailerIdentifier', 'TrailerIdentifier', 'TransportIdentifier', 'TransportMeansNationalityCode', 'TransportModeCode', 'VINID', 'model'], 'string'],
             [['@version', 'Capacity', 'EuroPalletCapacity', 'PakageTypeCode', 'submersible', 'type'], 'integer'],
-            [['CreateDate'], 'safe'],
+            [['CreateDate'
+//                'driver',
+            ], 'safe'],
             [['mass', 'volume'], 'number'],
         ];
     }

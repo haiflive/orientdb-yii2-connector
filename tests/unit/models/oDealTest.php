@@ -510,7 +510,7 @@ class oDealTest extends TestCase
         $this->assertTrue($deal->load($post), 'Load deal POST data');
         $this->assertTrue($deal->validate(),  'Validate deal');
         $this->assertTrue($deal->save(),      'Create deal');
-        
+
         return $deal;
     }
     
@@ -691,5 +691,26 @@ class oDealTest extends TestCase
         $this->assertTrue($priceFind2->goods[0]->GoodsQuantity == '222', 'Check modify relation embedded goods[0]->GoodsQuantity');
         
         return $priceFind;
+    }
+
+    public function testLinkRelation()
+    {
+        //simulate form input
+        $post = [
+            'oPrice' => [
+                'Price' => '2.00',
+                'Cost' => '22.00',
+                'Discount' => '0',
+                'QuantityMeasure' => '796',
+                'Quantity' => '2.00'
+            ]
+        ];
+
+        $price = new oPrice;
+
+//        $price->delivery
+
+
+        return $price;
     }
 }

@@ -506,7 +506,9 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
                 $dirtyValues[$key] = null; // embedded records require copy all values
             } elseif(is_array($val)) {
                 foreach($val as $key2 => $rec) {
-                    $values[$key][$key2] = $rec->getEmbeddedDirtyAttributes(true);
+                    if($values[$key][$key2] instanceof ActiveRecord && !$this->isRelationPopulated($key)) { // is record && is not link
+                        $values[$key][$key2] = $rec->getEmbeddedDirtyAttributes(true);
+                    }
                 }
                 $dirtyValues[$key] = null; // embedded records require copy all values
             }

@@ -48,11 +48,22 @@ create property Deal.Note string
 create property Services.Name string
 --
 create property Organization.role string
+create property Organization.additionRole string
+create property Organization.Country INTEGER
+create property Organization.orgForm INTEGER
 create property Organization.OrganizationName string
 create property Organization.ShortName string
+create property Organization.OrganizationNameEN string
+create property Organization.ShortNameEN string
+create property Organization.OrganizationLanguage string
 create property Organization.Phone string
+create property Organization.Fax string
 create property Organization.Email string
--- 
+create property Organization.Skype string
+create property Organization.Site string
+create property Organization.INN string
+create property Organization.CreateDate DATE
+--
 create property Address.PostalCode string
 create property Address.CountryCode string
 create property Address.Region string
