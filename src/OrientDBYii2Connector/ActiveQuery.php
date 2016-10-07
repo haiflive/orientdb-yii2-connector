@@ -1,17 +1,18 @@
 <?php
 namespace OrientDBYii2Connector;
 
-use Yii;
 use yii\db\ActiveQueryInterface;
 use yii\db\ActiveQueryTrait;
-use yii\db\ActiveRelationTrait;
-
+//use yii\db\ActiveRelationTrait;
 use OrientDBYii2Connector\DataRreaderOrientDB;
 
 class ActiveQuery extends Query implements ActiveQueryInterface
 {
     use ActiveQueryTrait;
-    use ActiveRelationTrait;
+//    use ActiveRelationTrait;
+    use ActiveRelationEmbeddedTrait;
+
+
     public function __construct($modelClass, $config = [])
     {
         $this->modelClass = $modelClass;
@@ -28,6 +29,11 @@ class ActiveQuery extends Query implements ActiveQueryInterface
         $row = parent::one($db);
         if ($row !== false) {
             $models = $this->populate([$row]);
+
+            for($i = 0; $i< count($models); $i++) { //! BUG fix reset old attributes after find for embedded records
+                $models[$i]->setIsNewRecord(false); // $models[$i]->setOldAttributes($models[$i]->getAttributes());
+            }
+
             return reset($models) ?: null;
         } else {
             return null;
@@ -65,9 +71,10 @@ class ActiveQuery extends Query implements ActiveQueryInterface
 
         return $this;
     }
-    
+
     /**
-     *  @brief Brief
+     * @param array $rows array of data
+     * @return array|\yii\db\ActiveRecord[]
      */
     public function populate($rows)
     {
@@ -76,6 +83,7 @@ class ActiveQuery extends Query implements ActiveQueryInterface
         }
 
         $models = $this->createModels($rows);
+
         // if (!empty($this->join) && $this->indexBy === null) {
             // $models = $this->removeDuplicatedModels($models); // not need in this database
         // }
@@ -107,58 +115,5 @@ class ActiveQuery extends Query implements ActiveQueryInterface
         }
     }
     
-    public function populateRelation($name, &$primaryModels)
-    {
-        // if (!is_array($this->link)) {
-            // throw new InvalidConfigException('Invalid link: it must be an array of key-value pairs.');
-        // }
-        
-        // viaTable not need int this database
-        // $this->filterByModels($primaryModels);
-        
-        //! BUG need recursive
-        if (!$this->multiple && count($primaryModels) === 1) {
-            foreach ($primaryModels as $i => $primaryModel) {
 
-                if ($primaryModel instanceof ActiveRecordInterface) { // ??? for what
-                    $model = $this->one();
-                    $primaryModel->populateRelation($name, $model);
-                } else {
-                    $rows = $primaryModels[$i][$name];
-                    if(empty($rows))
-                        return [];
-                    $model = $this->populate([$rows]);
-                    
-                    $primaryModels[$i][$name] = reset($model) ?: $this->one();
-                }
-                // if ($this->inverseOf !== null) { // ??? for what
-                    // $this->populateInverseRelation($primaryModels, [$model], $name, $this->inverseOf);
-                // }
-            }
-
-            return [$model];
-        } else {
-            $link = $this->link;
-            $models = [];
-
-            foreach ($primaryModels as $i => $primaryModel) {
-                if ($this->multiple && count($link) === 1 && is_array($rows = $primaryModel[$link])) {
-                    $model = $this->populate($rows);
-                    $value = $model ?: $this->all();
-                    
-                    if ($primaryModel instanceof ActiveRecordInterface) { // ??? for what
-                        $primaryModel->populateRelation($name, $value);
-                    } else {
-                        $primaryModels[$i][$name] = $value;
-                    }
-                    array_push($models, $model);
-                }
-            }
-            // if ($this->inverseOf !== null) {
-                // $this->populateInverseRelation($primaryModels, $models, $name, $this->inverseOf);
-            // }
-
-            return $models;
-        }
-    }
 }

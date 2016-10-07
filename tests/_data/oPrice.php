@@ -32,12 +32,12 @@ class oPrice extends \OrientDBYii2Connector\ActiveRecord
     
     public function getTransport()
     {
-        return $this->hasOne(oTransport::className(), 'transport');
+        return $this->embeddedOne(oTransport::className(), 'transport');
     }
     
     public function getGoods()
     {
-        return $this->hasMany(oGoods::className(), 'goods');
+        return $this->embeddedMany(oGoods::className(), 'goods');
     }
 
     /**

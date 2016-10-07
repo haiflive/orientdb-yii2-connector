@@ -13,23 +13,45 @@ use OrientDBYii2Connector\DataRreaderOrientDB;
 
 abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends from \yii\db\ActiveRecord, default extends from yii\db\BaseActiveRecord */
 {
-    /**
-     * The insert operation. This is mainly used when overriding [[transactions()]] to specify which operations are transactional.
-     */
-    const OP_INSERT = 0x01;
-    /**
-     * The update operation. This is mainly used when overriding [[transactions()]] to specify which operations are transactional.
-     */
-    const OP_UPDATE = 0x02;
-    /**
-     * The delete operation. This is mainly used when overriding [[transactions()]] to specify which operations are transactional.
-     */
-    const OP_DELETE = 0x04;
-    /**
-     * All three operations: insert, update, delete.
-     * This is a shortcut of the expression: OP_INSERT | OP_UPDATE | OP_DELETE.
-     */
-    const OP_ALL = 0x07;
+    public function hasOne($class, $link)
+    {
+        $query = $class::find();
+        $query->primaryModel = $this;
+        $query->link = $link;
+        $query->multiple = false;
+        $query->embedded = false;
+        return $query;
+    }
+
+    public function hasMany($class, $link)
+    {
+        $query = $class::find();
+        $query->primaryModel = $this;
+        $query->link = $link;
+        $query->multiple = true;
+        $query->embedded = false;
+        return $query;
+    }
+
+    public function embeddedOne($class, $link)
+    {
+        $query = $class::find();
+        $query->primaryModel = $this;
+        $query->link = $link;
+        $query->multiple = false;
+        $query->embedded = true;
+        return $query;
+    }
+
+    public function embeddedMany($class, $link)
+    {
+        $query = $class::find();
+        $query->primaryModel = $this;
+        $query->link = $link;
+        $query->multiple = true;
+        $query->embedded = true;
+        return $query;
+    }
     
     // public function __call($name, $args)
     // {
@@ -45,7 +67,7 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
             // }
         // }
     // }
-    
+    /*
     public function __get($name)
     {
         // lazy loading
@@ -73,7 +95,7 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
         }
         
         return parent::__get($name);
-    }
+    }*/
     
     /*
     public function __get($name)
@@ -107,12 +129,6 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
             }
         }
         return true;
-    }
-    
-    public function attributes()
-    {
-        return array_keys(static::getTableSchema()->columns);
-        // throw new InvalidConfigException(get_called_class() . ' must have attributes() method.');
     }
     
     public function mergeAttribute($name, $value)
@@ -190,7 +206,7 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
      */
     public function insert($runValidation = true, $attributes = null)
     {
-        if ($runValidation && !$this->validate($attributes)) {
+        if ($runValidation && !$this->validate($attributes) && !$this->validateEmbedded()) {
             Yii::info('Model not inserted due to validation error.', __METHOD__);
             return false;
         }
@@ -219,8 +235,9 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
         if (!$this->beforeSave(true)) {
             return false;
         }
-        $values = $this->getDirtyAttributes($attributes);
-        
+
+        $values = $this->getEmbeddedDirtyAttributes($attributes);
+
         if (($primaryKeys = static::getDb()->createCommand()->insert($this->tableName(), $values)->execute()) === false) {
             return false;
         }
@@ -239,9 +256,8 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
     
     public function update($runValidation = true, $attributeNames = null)
     {
-        //! bug need convert _rid to rif
         // UPDATE `Deal` SET number='0000' WHERE @rid='#12:1'
-        if ($runValidation && !$this->validate($attributeNames)) {
+        if ($runValidation && !$this->validate($attributeNames) && !$this->validateEmbedded()) {
             Yii::info('Model not updated due to validation error.', __METHOD__);
             return false;
         }
@@ -263,6 +279,42 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
             $transaction->rollBack();
             throw $e;
         }
+    }
+
+    protected function updateInternal($attributes = null)
+    {
+        if (!$this->beforeSave(false)) {
+            return false;
+        }
+
+        $values = $this->getEmbeddedDirtyAttributes($attributes);
+
+        if (empty($values)) {
+            $this->afterSave(false, $values);
+            return 0;
+        }
+        $condition = $this->getOldPrimaryKey(true);
+        $lock = $this->optimisticLock();
+        if ($lock !== null) {
+            $values[$lock] = $this->$lock + 1;
+            $condition[$lock] = $this->$lock;
+        }
+        // We do not check the return value of updateAll() because it's possible
+        // that the UPDATE statement doesn't change anything and thus returns 0.
+        $rows = $this->updateAll($values, $condition);
+
+        if ($lock !== null && !$rows) {
+            throw new StaleObjectException('The object being updated is outdated.');
+        }
+
+        if (isset($values[$lock])) {
+            $this->$lock = $values[$lock];
+        }
+
+        $this->setIsNewRecord(false); // $this->setOldAttributes($this->getEmbeddedDirtyAttributes());
+        $this->afterSave(false, $values);
+
+        return $rows;
     }
     
     public static function updateAll($attributes, $condition = '', $params = [])
@@ -395,21 +447,156 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
             $this->setAttributes($this->defaultValues(), false);
         }
     }
+
     public function defaultValues()
     {
         return [];
     }
-    
-    public function transactions()
-    {
-        return [];
-    }
-    
-    public function isTransactional($operation)
-    {
-        $scenario = $this->getScenario();
-        $transactions = $this->transactions();
 
-        return isset($transactions[$scenario]) && ($transactions[$scenario] & $operation);
+    /**
+     * recursive validate embedded ActiveRecords
+     * @return bool
+     */
+    public function validateEmbedded()
+    {
+        $values = $this->getAttributes();
+
+        for($i=0; $i<count($values); $i++) {
+            if($values[$i] instanceof ActiveRecord) {
+                if(!$values[$i]->validate() && !$values[$i]->validateEmbedded()) {
+                    Yii::info('Model not inserted due to validation error Embedded Model.', __METHOD__);
+                    return false; // error
+                }
+            }
+        }
+
+        return true;
     }
+/* // unused
+    public function getEmbeddedAttributes()
+    {
+        $values = $this->getAttributes();
+
+        foreach($values as $key => $val){
+            if($val instanceof ActiveRecord && !$this->isRelationPopulated($key)) { // is record && is not link
+                $values[$key] = $val->getEmbeddedAttributes();
+            } elseif(is_array($val)) {
+                print_r('unready');
+                die();
+            }
+        }
+
+        return $values;
+    }
+    */
+    /**
+     * filter embedded relations
+     *      embedded relations cant bee NULL
+     * @param bool isEmbedded - get all params for embedded records
+     * @return array
+     */
+    public function getEmbeddedDirtyAttributes($isEmbedded = false)
+    {
+        $values = $this->getAttributes($this->fields());
+        $dirtyValues = $this->getDirtyAttributes();
+
+        foreach($values as $key => $val){
+            if($val instanceof ActiveRecord && !$this->isRelationPopulated($key)) { // is record && is not link
+                $values[$key] = $val->getEmbeddedDirtyAttributes(true);
+                $dirtyValues[$key] = null; // embedded records require copy all values
+            } elseif(is_array($val)) {
+                foreach($val as $key2 => $rec) {
+                    $values[$key][$key2] = $rec->getEmbeddedDirtyAttributes(true);
+                }
+                $dirtyValues[$key] = null; // embedded records require copy all values
+            }
+        }
+
+        if(!$isEmbedded) // filter fields for main record(use only modified)
+            $values = array_intersect_key($values, $dirtyValues);
+
+        return $values;
+    }
+
+    public function setAttributes($values, $safeOnly = true)
+    {
+        if (is_array($values)) {
+            $attributes = array_flip($safeOnly ? $this->safeAttributes() : $this->attributes());
+            foreach ($values as $name => $value) {
+                if($this->trySetupEmbeddedRelation($name, $value)) // if success
+                    continue;
+
+                if (isset($attributes[$name])) {
+                    $this->$name = $value;
+                } elseif ($safeOnly) {
+                    $this->onUnsafeAttribute($name, $value);
+                }
+            }
+        }
+    }
+
+    public function setAttribute($name, $value)
+    {
+        if($this->trySetupEmbeddedRelation($name, $value)) // if success
+            return ;
+
+        parent::setAttribute($name, $value);
+    }
+
+    /**
+     * @param $name string
+     * @param $value mixed
+     * @return bool if true relation setuped
+     */
+    protected function trySetupEmbeddedRelation($name, $value)
+    {
+        if(is_array($value)) {
+            // try to find embedded relation
+            if ($query = $this->getRelation($name, false)) {
+                if($query->embedded) {
+                    if($query->multiple) {
+                        $resultModels = [];
+                        foreach($value as $key => $val) {
+                            $values = array_fill_keys(array_keys($val), null);
+                            $models = $query->populate([$values]);
+                            $model = reset($models) ?: null;
+
+                            $model->setAttributes($val); // make getDirtyAttributes
+
+                            $resultModels[$key] = $model;
+                        }
+                        $this->$name = $resultModels;
+                    } else {
+                        $values = array_fill_keys(array_keys($value), null);
+                        $models = $query->populate([$values]);
+                        $this->$name = reset($models) ?: null;
+
+                        $this->$name->setAttributes($value); // make getDirtyAttributes
+                    }
+                } else { // link
+                    print_r('>> unready' . __METHOD__);
+                    die();
+                }
+                return true; // relation founded
+            }
+        }
+
+        return false;
+    }
+/*
+    public function load($data, $formName = null)
+    {
+        $scope = $formName === null ? $this->formName() : $formName;
+        if ($scope === '' && !empty($data)) {
+            $this->setAttributes($data);
+
+            return true;
+        } elseif (isset($data[$scope])) {
+            $this->setAttributes($data[$scope]);
+
+            return true;
+        } else {
+            return false;
+        }
+    }*/
 }
