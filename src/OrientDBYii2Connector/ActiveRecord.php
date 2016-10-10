@@ -316,7 +316,7 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
 
         return $rows;
     }
-    
+
     public static function updateAll($attributes, $condition = '', $params = [])
     {
         $command = static::getDb()->createCommand();
@@ -576,8 +576,7 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
                         $this->$name->setAttributes($value); // make getDirtyAttributes
                     }
                 } else { // link
-                    print_r('>> unready' . __METHOD__);
-                    die();
+                    return true; //!? link relation not need, it's really unsafe use it?
                 }
                 return true; // relation founded
             }
@@ -585,6 +584,100 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
 
         return false;
     }
+
+    /**
+     * @param string $name the case sensitive name of the relationship.
+     * @param ActiveRecordInterface $model the model to be linked with the current one.
+     * @param array $extraColumns - not need inherit BaseActiveRecord class
+     */
+
+    public function link($name, $model, $extraColumns = [])
+    {
+        $relation = $this->getRelation($name);
+
+        if($relation->embedded) {
+            throw new InvalidCallException('Unable to link models: embedded relation can\'t bee linked.');
+        }
+
+        if($model->getIsNewRecord()) { //? or need auto save
+            throw new InvalidCallException('Unable to link models: relation has no @rid.');
+        }
+
+        if($relation->multiple) {
+            $tmpArr = is_array($this->$name) ? $this->$name : [];
+            array_push($tmpArr, $model);
+            $this->$name = $tmpArr;
+            unset($tmpArr);
+        } else {
+            $this->$name = $model;
+        }
+    }
+
+    public function unlink($name, $model, $delete = false)
+    {
+        $relation = $this->getRelation($name);
+
+        if($relation->embedded) {
+            throw new InvalidCallException('Unable to unlink models: embedded relation can\'t bee unlinked.');
+        }
+
+        if($model->getIsNewRecord()) { //? impossible
+            throw new InvalidCallException('Unable to unlink models: relation has no @rid.');
+        }
+
+        if($delete)
+            $model->delete();
+
+        if($relation->multiple) {
+            if(is_array($this->$name)) {
+                $tmpArr = [];
+                foreach($this->$name as $rel) {
+                    if($rel['@rid'] !== $model['@rid'])
+                        array_push($tmpArr, $rel);
+                }
+
+                $this->$name = $tmpArr;
+                unset($tmpArr);
+
+                if(empty($this->$name)) {
+                    $this->$name = null;
+//                    unset($this->$name); // will call BaseActiveRecord::__unset
+                }
+            }
+        } else {
+            unset($this->$name); // will call BaseActiveRecord::__unset
+        }
+
+//        $this->save();
+    }
+
+    public function unlinkAll($name, $delete = false)
+    {
+        $relation = $this->getRelation($name);
+
+        if($relation->embedded) {
+            throw new InvalidCallException('Unable to unlink models: embedded relation can\'t bee unlinked All.');
+        }
+
+        if($delete) {
+            if($relation->multiple) {
+                foreach ($this->$name as $rel) {
+                    $rel->delete();
+                }
+            } else {
+                $this->$name->delete();
+            }
+        }
+
+        if($relation->multiple) {
+            $this->$name = null;
+        } else {
+            unset($this->$name); // will call BaseActiveRecord::__unset
+        }
+
+//        $this->save(false); //? not need
+    }
+
 /*
     public function load($data, $formName = null)
     {

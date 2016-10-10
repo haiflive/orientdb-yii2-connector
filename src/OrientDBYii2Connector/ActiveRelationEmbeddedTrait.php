@@ -17,7 +17,7 @@ trait ActiveRelationEmbeddedTrait
         // viaTable not need int this database
         // $this->filterByModels($primaryModels);
 
-        //! BUG need recursive
+        // TODO, need recursive (untested) !? not need recursive
         if (!$this->multiple && count($primaryModels) === 1) {
             foreach ($primaryModels as $i => $primaryModel) {
 
@@ -45,7 +45,8 @@ trait ActiveRelationEmbeddedTrait
             foreach ($primaryModels as $i => $primaryModel) {
                 if ($this->multiple && count($link) === 1 && is_array($rows = $primaryModel[$link])) {
                     $model = $this->populate($rows);
-                    $value = $model ?: $this->all();
+//                    $value = $model ?: $this->all(); //?! use (1)
+                    $value = is_array($model) ? $model : $this->all(); //?! or (2)
 
                     if ($primaryModel instanceof ActiveRecordInterface) { // ??? for what
                         $primaryModel->populateRelation($name, $value);

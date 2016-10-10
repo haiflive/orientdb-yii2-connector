@@ -33,6 +33,12 @@ class oOrganization extends \OrientDBYii2Connector\ActiveRecord
     /**
      * @inheritdoc
      */
+
+    public function getServices()
+    {
+        return $this->hasMany(oPrice::className(), 'services');
+    }
+
     public static function tableName()
     {
         return 'Organization';

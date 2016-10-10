@@ -34,11 +34,11 @@ class Command extends Component
         if (empty($values)) {
             return $this;
         }
-        
+
         //! BUG, need check Schema
         foreach ($values as $name => $value) {
             if (is_array($value) && array_values($value) === $value) { // sequential
-                $this->params[$name] = $value[0];
+                $this->params[$name] = isset($value[0]) ?: []; // fix empty link list
             } if(is_array($value)) { // associative array, embedded data
                 $this->params[$name] = $value;
             } else {
@@ -220,9 +220,9 @@ class Command extends Component
     public function execute()
     {
         $sql = $this->getSql();
-        
+
         $rawSql = $this->getRawSql();
-        
+
         Yii::info($rawSql, __METHOD__);
 
         if ($sql == '') {

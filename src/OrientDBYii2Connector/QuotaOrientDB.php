@@ -83,11 +83,11 @@ class QuotaOrientDB
         $search  = array("\\",   "'",  '"');  // "\0","\n","\r","\x1a",
         $replace = array("\\\\", "\'", '\"'); // "\\0","\\n","\\r","\Z",
         //search string     search regex        sql replacement regex
-        
+
         return str_replace($search, $replace, $str);
         */
         
-        return addcslashes(str_replace("'", "''", $str), "\000\n\r\\\032");
+        return addcslashes($str, "\000\n\r\\\032\047");
     }
     
     static function prepairEmbedded($embeddedData) {

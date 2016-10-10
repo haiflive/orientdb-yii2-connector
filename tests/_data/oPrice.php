@@ -42,7 +42,7 @@ class oPrice extends \OrientDBYii2Connector\ActiveRecord
 
     public function getDelivery()
     {
-        return $this->embeddedOne(oAddress::className(), 'delivery');
+        return $this->hasOne(oAddress::className(), 'delivery');
     }
 
     /**
@@ -62,9 +62,7 @@ class oPrice extends \OrientDBYii2Connector\ActiveRecord
             [['@class', '@rid'], 'string'],
             [['@version', 'Discount', 'QuantityMeasure'], 'integer'],
             [['Cost', 'Price', 'Quantity'], 'number'],
-            [['delivery', 'service',
-//                'transport', 'goods'
-            ], 'safe']
+//            [['delivery', 'service', 'transport', 'goods'], 'safe']
         ];
     }
 

@@ -27,7 +27,8 @@ class ActiveQuery extends Query implements ActiveQueryInterface
     public function one($db = null)
     {
         $row = parent::one($db);
-        if ($row !== false) {
+
+        if ($row !== null) {
             $models = $this->populate([$row]);
 
             for($i = 0; $i< count($models); $i++) { //! BUG fix reset old attributes after find for embedded records

@@ -148,7 +148,7 @@ class Query extends Component implements QueryInterface
         if(!empty($this->fetch_plan)){
             $command->setFetch_plan($this->fetch_plan);
             $rows = (new DataRreaderOrientDB($command->queryOne()))->getTree();
-            if(!empty($rows))
+            if(!empty($rows) && !empty($rows[0]))
                 return $rows[0];
         } else {
             $rows = $command->queryOne();

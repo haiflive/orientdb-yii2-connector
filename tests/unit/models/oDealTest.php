@@ -708,9 +708,319 @@ class oDealTest extends TestCase
 
         $price = new oPrice;
 
-//        $price->delivery
+        //simulate form input
+        $postAddress = [
+            'oAddress' => [
+                'PostalCode' => '692500',
+                'CountryCode' => 'RU',
+                'Region' => 'Primorsky kray',
+                'City' => 'Ussuriisk',
+                'StreetHouse' => 'Nekrasova street, 25',
+                'LanguageCode' => 'EN'
+            ]
+        ];
+
+        $address = new oAddress;
+
+        $this->assertTrue($address->load($postAddress), 'Load address POST data');
+        $this->assertTrue($address->validate(),  'Validate address');
+        $this->assertTrue($address->save(),      'Create address');
+
+//        $price->delivery = $address;
+        $price->link('delivery', $address);
+
+        $this->assertTrue($price->load($post), 'Load price POST data');
+        $this->assertTrue($price->validate(),  'Validate price');
+        $this->assertTrue($price->save(),      'Create price');
+
+        $priceFind = oPrice::find()
+            ->where(['@rid' => $price['@rid']])
+            ->with(['delivery'])
+            ->one();
+
+        $this->assertTrue($priceFind->QuantityMeasure == '796', 'Check QuantityMeasure');
+        $this->assertTrue($priceFind->delivery->PostalCode == '692500', 'Check relation link delivery->PostalCode');
+
+        $priceFind->QuantityMeasure = '999';
+        $priceFind->delivery->PostalCode = '692582';
+
+        $this->assertTrue($priceFind->validate(),  'Validate price');
+        $this->assertTrue($priceFind->save(),  'Update price');
+        $this->assertTrue($priceFind->delivery->save(),  'Update link relation');
+
+        $priceFind2 = oPrice::find()
+            ->where(['@rid' => $price['@rid']])
+            ->with(['delivery'])
+            ->one();
+
+        $this->assertTrue($priceFind2->QuantityMeasure == '999', 'Check modify QuantityMeasure');
+        $this->assertTrue($priceFind2->delivery->PostalCode == '692582', 'Check modify relation link delivery->PostalCode');
+
+        $priceFind2->unlink('delivery', $priceFind2->delivery);
+
+        return $priceFind;
+    }
+
+    public function testLinkRelationsOnLoad()
+    {
+        //simulate form input
+        $post = [
+            'oPrice' => [
+                'Price' => '2.00',
+                'Cost' => '22.00',
+                'Discount' => '0',
+                'QuantityMeasure' => '796',
+                'Quantity' => '2.00',
+                'delivery' => [ // link relation will skipped
+                    'PostalCode' => '692500',
+                    'CountryCode' => 'RU',
+                    'Region' => 'Primorsky kray',
+                    'City' => 'Ussuriisk',
+                    'StreetHouse' => 'Nekrasova street, 25',
+                    'LanguageCode' => 'EN'
+                ]
+            ]
+        ];
+
+        $price = new oPrice;
+
+        $this->assertTrue($price->load($post), 'Load price POST data');
+        $this->assertTrue(empty($price->delivery), 'Link relation empty on load');
+        $this->assertTrue($price->validate(),  'Validate price');
+        $this->assertTrue($price->save(),      'Create price');
+
+        $priceFind = oPrice::find()
+            ->where(['@rid' => $price['@rid']])
+            ->with(['delivery'])
+            ->one();
+
+        $this->assertTrue(empty($priceFind->delivery), 'Link relation empty after save');
+
+        return $priceFind;
+    }
+
+    public function testLinkListRelation()
+    {
+        // create relations
+        $price1 = $this->testCreatePrice();
+        $price2 = $this->testCreatePrice();
+
+        //simulate form input
+        $post = [
+            'oOrganization' => [
+                'role' => 'buyer',
+                'Country' => '643',
+                'OrganizationName' => 'Sender organization full name',
+                'ShortName' => 'Sender organization',
+                'Phone' => '+7988878787',
+                'Email' => 'org@testSender.te',
+                'Skype' => 'org_test',
+                'Site' => 'www.testSender.te',
+                'INN' => '252525454545',
+                'CreateDate' => date('Y-m-d')
+            ]
+        ];
+
+        $organization = new oOrganization;
+
+//        $services = [$price1, $price1];
+//        $organization->services = $services;
+        $organization->link('services', $price1);
+        $organization->link('services', $price2);
+
+        $this->assertTrue($organization->load($post), 'Load organization POST data');
+        $this->assertTrue($organization->validate(),  'Validate organization');
+        $this->assertTrue($organization->save(),      'Create organization');
+
+        $organizationFind = oOrganization::find()
+            ->where(['@rid' => $organization['@rid']])
+            ->with(['services'])
+            ->one();
+
+        $this->assertTrue($organizationFind->role == 'buyer', 'Check organization role');
+        $this->assertTrue($organizationFind->services[0]->QuantityMeasure == '796', 'Check link list relation services[0]->Name');
+
+        $organizationFind->unlink('services', $organizationFind->services[0]);
+
+        $this->assertTrue(count($organizationFind->services) == 1, 'Check link list count after unlink');
+
+        $organizationFind->unlink('services', $organizationFind->services[0]);
+//
+        $this->assertTrue(empty($organizationFind->services), 'Check link list count after unlink 2');
+
+        $this->assertTrue($organizationFind->save(), 'Create organization');
+
+        $organizationFind2 = oOrganization::find()
+            ->where(['@rid' => $organizationFind['@rid']])
+            ->with(['services'])
+            ->one();
+
+        // TODO fix BUG, - LINKLIST $organizationFind2->services return all relations
+        $this->assertTrue(empty($organizationFind2->services), 'Check link list count after save');
+
+        return $organizationFind2;
+    }
+
+    public function testNotFoundedRelation()
+    {
+        // TODO fix vulnerability
+        $organizationFind3 = oOrganization::find()
+            ->where(['@rid' => '!@#$%^&*\'(YUIKL']) //!!! vulnerability
+            ->one();
+
+        $this->assertTrue(empty($organizationFind3),  'Check organization not found: spec symbols rid');
+
+        $organizationFind1 = oOrganization::find()
+            ->where(['@rid' => '@15:3']) //! `@`, - bad rid
+            ->one();
+
+        $this->assertTrue(empty($organizationFind1), 'Check organization not found: bad rid');
+
+        $organizationFind2 = oOrganization::find()
+            ->where(['@rid' => '#-1:-1'])
+            ->one();
+
+        $this->assertTrue(empty($organizationFind2),  'Check organization not found: embedded rid');
+    }
 
 
-        return $price;
+    public function testLoadLinkRelation()
+    {
+        $priceFind = oPrice::find()
+            ->where(['@rid' => '#13:5'])
+            ->with(['delivery'])
+            ->one();
+
+//        print_r($priceFind);
+//        die();
+    }
+
+    public function testLoadLinkListRelationUnlinkAll()
+    {
+        // create relations
+        $price1 = $this->testCreatePrice();
+        $price2 = $this->testCreatePrice();
+
+        //simulate form input
+        $post = [
+            'oOrganization' => [
+                'role' => 'buyer',
+                'Country' => '643',
+                'OrganizationName' => 'Sender organization full name',
+                'ShortName' => 'Sender organization',
+                'Phone' => '+7988878787',
+                'Email' => 'org@testSender.te',
+                'Skype' => 'org_test',
+                'Site' => 'www.testSender.te',
+                'INN' => '252525454545',
+                'CreateDate' => date('Y-m-d')
+            ]
+        ];
+
+        $organization = new oOrganization;
+
+//        $services = [$price1, $price1];
+//        $organization->services = $services;
+        $organization->link('services', $price1);
+        $organization->link('services', $price2);
+
+        $this->assertTrue($organization->load($post), 'Load organization POST data');
+        $this->assertTrue($organization->validate(),  'Validate organization');
+        $this->assertTrue($organization->save(),      'Create organization');
+
+        $organizationFind = oOrganization::find()
+            ->where(['@rid' => $organization['@rid']])
+            ->with(['services'])
+            ->one();
+
+        $this->assertTrue($organizationFind->role == 'buyer', 'Check organization role');
+        $this->assertTrue($organizationFind->services[0]->QuantityMeasure == '796', 'Check link list relation services[0]->Name');
+
+        $organizationFind->unlinkAll('services');
+//
+        $this->assertTrue(empty($organizationFind->services), 'Check link list count after unlink 2');
+
+        $this->assertTrue($organizationFind->save(), 'Create organization');
+
+        $organizationFind2 = oOrganization::find()
+            ->where(['@rid' => $organizationFind['@rid']])
+            ->with(['services'])
+            ->one();
+
+        // TODO fix BUG, - LINKLIST $organizationFind2->services return all relations
+        $this->assertTrue(empty($organizationFind2->services), 'Check link list count after save');
+
+        return $organizationFind2;
+    }
+
+    public function testLoadLinkListRelationEmptyRelation()
+    {
+        $organizationFind = oOrganization::find()
+            ->where(['@rid' => '#15:97'])
+            ->with(['services'])
+            ->one();
+
+        if(!empty($organizationFind)) {
+//            if($organizationFind->services == []) count(*) == 20
+//            $this->assertTrue(count($organizationFind->services) !== 20, 'Check link list relation services count == 0');
+            $this->assertTrue(empty($organizationFind->services), 'Check link list relation services count == 0');
+        }
+    }
+
+    /**
+     * example [null,null]
+     */
+    public function testRemovedLinkListRelation()
+    {
+        // create relations
+        $price1 = $this->testCreatePrice();
+        $price2 = $this->testCreatePrice();
+
+        //simulate form input
+        $post = [
+            'oOrganization' => [
+                'role' => 'buyer',
+                'Country' => '643',
+                'OrganizationName' => 'Sender organization full name',
+                'ShortName' => 'Sender organization',
+                'Phone' => '+7988878787',
+                'Email' => 'org@testSender.te',
+                'Skype' => 'org_test',
+                'Site' => 'www.testSender.te',
+                'INN' => '252525454545',
+                'CreateDate' => date('Y-m-d')
+            ]
+        ];
+
+        $organization = new oOrganization;
+
+//        $services = [$price1, $price1];
+//        $organization->services = $services;
+        $organization->link('services', $price1);
+        $organization->link('services', $price2);
+
+        $this->assertTrue($organization->load($post), 'Load organization POST data');
+        $this->assertTrue($organization->validate(),  'Validate organization');
+        $this->assertTrue($organization->save(),      'Create organization');
+
+        $organizationFind = oOrganization::find()
+            ->where(['@rid' => $organization['@rid']])
+            ->with(['services'])
+            ->one();
+
+        $this->assertTrue($organizationFind->role == 'buyer', 'Check organization role');
+        $this->assertTrue($organizationFind->services[0]->QuantityMeasure == '796', 'Check link list relation services[0]->Name');
+
+        $organizationFind->services[0]->delete();
+
+        $organizationFind2 = oOrganization::find()
+            ->where(['@rid' => $organizationFind['@rid']])
+            ->with(['services']) //! LINKLIST
+            ->one();
+
+        $this->assertTrue(count($organizationFind2->services) == 1, 'Check link list count after save == 1');
+
+        return $organizationFind2;
     }
 }
+
