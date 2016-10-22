@@ -11,6 +11,7 @@ Contains:
 
 ###### Warning:
 > OrientDB PHP binary protocol has no PDO or Quota methods, this library can bee unsafe
+> Works with OrientDB 2.1.9 (protocol 32), not with 2.2.0 (protocol 36)
 
 # composer install 
 
