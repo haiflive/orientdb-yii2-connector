@@ -14,16 +14,16 @@ trait ActiveRelationEmbeddedTrait
         // throw new InvalidConfigException('Invalid link: it must be an array of key-value pairs.');
         // }
 
-        // viaTable not need int this database
+        // viaTable not need in this database
         // $this->filterByModels($primaryModels);
 
-        // TODO, need recursive (untested) !? not need recursive
         if (!$this->multiple && count($primaryModels) === 1) {
             foreach ($primaryModels as $i => $primaryModel) {
 
-                if ($primaryModel instanceof ActiveRecordInterface) { // ??? for what
+                if ($primaryModel instanceof ActiveRecordInterface) {
                     $model = $this->one();
-                    $primaryModel->populateRelation($name, $model);
+                    if(!$this->embedded)
+                        $primaryModel->populateRelation($name, $model);
                 } else {
                     $rows = $primaryModels[$i][$name];
                     if(empty($rows))
@@ -31,6 +31,8 @@ trait ActiveRelationEmbeddedTrait
                     $model = $this->populate([$rows]);
 
                     $primaryModels[$i][$name] = reset($model) ?: $this->one();
+                    if(!$this->embedded)
+                        $primaryModels[$i]->populateRelation($name, $model);
                 }
                 // if ($this->inverseOf !== null) { // ??? for what
                 // $this->populateInverseRelation($primaryModels, [$model], $name, $this->inverseOf);

@@ -95,11 +95,17 @@ class oDealTest extends TestCase
         ];
         
         $organization = new oOrganization;
-        
+
+        $service1 = $this->testCreatePrice();
+        $service2 = $this->testCreatePrice();
+        // LINKLIST
+        $organization->link('services', $service1);
+        $organization->link('services', $service2);
+
         $this->assertTrue($organization->load($post), 'Load organization POST data');
         $this->assertTrue($organization->validate(),  'Validate organization');
         $this->assertTrue($organization->save(),      'Create organization');
-        
+
         return $organization;
     }
     
@@ -276,7 +282,7 @@ class oDealTest extends TestCase
         
         return $resident;
     }
-    
+
     /* --->*
      * @depends testCreateSender
      * @depends testCreateReciver
@@ -300,31 +306,31 @@ class oDealTest extends TestCase
                 'Note' => 'testing relations',
                 'Number' => '0001',
                 // embedded relations:
-                'sender' => [
-                    '@class'=>'Organization', //!
-                    'role' => 'buyer',
-                    'Country' => '643',
-                    'OrganizationName' => 'Sender organization full name',
-                    'ShortName' => 'Sender organization',
-                    'Phone' => '+7988878787',
-                    'Email' => 'org@testSender.te',
-                    'Skype' => 'org_test',
-                    'Site' => 'www.testSender.te',
-                    'INN' => '252525454545',
-                    'CreateDate' => date('Y-m-d')
-                ],
-                'reciver' => [
-                    '@class'=>'Organization', //!
-                    'role' => 'seller',
-                    'Country' => '156',
-                    'OrganizationName' => 'Reciver organization full name',
-                    'ShortName' => 'Reciver organization',
-                    'Phone' => '+8988878787',
-                    'Email' => 'org@testReciver.ch',
-                    'Skype' => 'org_test',
-                    'Site' => 'www.testReciver.te',
-                    'CreateDate' => date('Y-m-d')
-                ],
+//                'sender' => [
+//                    '@class'=>'Organization', //!
+//                    'role' => 'buyer',
+//                    'Country' => '643',
+//                    'OrganizationName' => 'Sender organization full name',
+//                    'ShortName' => 'Sender organization',
+//                    'Phone' => '+7988878787',
+//                    'Email' => 'org@testSender.te',
+//                    'Skype' => 'org_test',
+//                    'Site' => 'www.testSender.te',
+//                    'INN' => '252525454545',
+//                    'CreateDate' => date('Y-m-d')
+//                ],
+//                'reciver' => [
+//                    '@class'=>'Organization', //!
+//                    'role' => 'seller',
+//                    'Country' => '156',
+//                    'OrganizationName' => 'Reciver organization full name',
+//                    'ShortName' => 'Reciver organization',
+//                    'Phone' => '+8988878787',
+//                    'Email' => 'org@testReciver.ch',
+//                    'Skype' => 'org_test',
+//                    'Site' => 'www.testReciver.te',
+//                    'CreateDate' => date('Y-m-d')
+//                ],
                 'addressTo' => [
                     '@class'=>'Address', //!
                     'PostalCode' => '692500',
@@ -504,10 +510,41 @@ class oDealTest extends TestCase
                 ]],
             ]
         ];
-        
+
         $deal = new oDeal;
-        
+        // TODO create full relations example
+        // create relations
+        $executor = $this->testCreateExecutor(); // has services(LINKLIST)
+        $sender = $this->testCreateSender();
+        $reciver = $this->testCreateReciver();
+        $address1 = $this->testCreateAddress();
+        $address2 = $this->testCreateAddress();
+        $driver = $this->testCreateResident();
+
         $this->assertTrue($deal->load($post), 'Load deal POST data');
+
+        // link relation data
+        // 1 test link
+        $deal->link('sender', $sender);
+        // 2 test magic
+        unset($reciver->{'@rid'});
+        $deal->reciver = $reciver;
+
+        // link of relation
+        $deal->expenses[0]->link('executor', $executor);
+
+        // link of relation of relation
+        $deal->expenses[0]->prices[0]->link('delivery', $address1);
+
+        // link of relation of relation of relation
+        $deal->expenses[0]->prices[0]->transport->link('driver', $driver);
+
+        //
+        $deal->expenses[0]->prices[1]->link('delivery', $address2);
+
+//        $deal->expenses[1]->executor = $executor; //"-" test magic relation
+        $deal->expenses[1]->link('executor', $executor); //"+" test link
+
         $this->assertTrue($deal->validate(),  'Validate deal');
         $this->assertTrue($deal->save(),      'Create deal');
 
@@ -761,7 +798,7 @@ class oDealTest extends TestCase
         return $priceFind;
     }
 
-    public function testLinkRelationsOnLoad()
+    public function testOnLoadLinkRelations()
     {
         //simulate form input
         $post = [
@@ -855,7 +892,6 @@ class oDealTest extends TestCase
             ->with(['services'])
             ->one();
 
-        // TODO fix BUG, - LINKLIST $organizationFind2->services return all relations
         $this->assertTrue(empty($organizationFind2->services), 'Check link list count after save');
 
         return $organizationFind2;
@@ -863,7 +899,6 @@ class oDealTest extends TestCase
 
     public function testNotFoundedRelation()
     {
-        // TODO fix vulnerability
         $organizationFind3 = oOrganization::find()
             ->where(['@rid' => '!@#$%^&*\'(YUIKL']) //!!! vulnerability
             ->one();
@@ -1021,6 +1056,42 @@ class oDealTest extends TestCase
         $this->assertTrue(count($organizationFind2->services) == 1, 'Check link list count after save == 1');
 
         return $organizationFind2;
+    }
+
+    public function testQuotaData()
+    {
+        //simulate form input
+        $post = [
+            'oOrganization' => [
+                'role' => 'buyer',
+                'Country' => '643',
+                'OrganizationName' => 'Sender organization "asd\'\'!@#$%^&* full name',
+                'ShortName' => "Sender '''''asdc !@#!@#\''']'\\\\\\\''''''\'\'\'\'\'\'organization",
+                'Phone' => '+7988878787',
+                'Email' => 'org@testSender.te',
+                'Skype' => 'org_test',
+                'Site' => 'www.testSender.te',
+                'INN' => '252525454545',
+                'CreateDate' => date('Y-m-d')
+            ]
+        ];
+
+        $organization = new oOrganization;
+
+        $this->assertTrue($organization->load($post), 'Load organization POST data');
+        $this->assertTrue($organization->validate(),  'Validate organization');
+        $this->assertTrue($organization->save(),      'Create organization');
+
+        $this->assertTrue($organization->Skype == 'org_test', 'Check Skype');
+
+        $this->assertTrue($organization->save(),      'Update organization');
+
+        $organizationFind = oOrganization::find()
+            ->where(['@rid' => $organization['@rid']])
+            ->one();
+
+        $this->assertTrue($organizationFind->Skype == 'org_test', 'Check Skype');
+        $this->assertTrue($organizationFind->ShortName == $post['oOrganization']['ShortName'], 'Check quoted data');
     }
 }
 

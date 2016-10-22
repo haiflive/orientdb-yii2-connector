@@ -25,6 +25,12 @@ class oExpense extends \OrientDBYii2Connector\ActiveRecord
         return $this->embeddedMany(oPrice::className(), 'prices');
     }
 
+
+    public function getExecutor()
+    {
+        return $this->hasOne(oOrganization::className(), 'executor');
+    }
+
     /**
      * @inheritdoc
      */

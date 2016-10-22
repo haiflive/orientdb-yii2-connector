@@ -3,6 +3,7 @@ namespace OrientDBYii2Connector;
 
 use Yii;
 use yii\base\InvalidConfigException;
+use yii\base\InvalidCallException;
 use yii\db\ActiveQueryInterface;
 use yii\db\StaleObjectException;
 use yii\helpers\ArrayHelper;
@@ -241,7 +242,7 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
         if (($primaryKeys = static::getDb()->createCommand()->insert($this->tableName(), $values)->execute()) === false) {
             return false;
         }
-        
+
         foreach ($primaryKeys as $name => $value) {
             $this->setAttribute($name, $value);
             $values[$name] = $value;
@@ -492,22 +493,27 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
     /**
      * filter embedded relations
      *      embedded relations cant bee NULL
+     * @param array attributes - attributes
      * @param bool isEmbedded - get all params for embedded records
      * @return array
      */
-    public function getEmbeddedDirtyAttributes($isEmbedded = false)
+    public function getEmbeddedDirtyAttributes($attributes = null, $isEmbedded = false)
     {
         $values = $this->getAttributes($this->fields());
         $dirtyValues = $this->getDirtyAttributes();
 
+        // embedded && values:
         foreach($values as $key => $val){
             if($val instanceof ActiveRecord && !$this->isRelationPopulated($key)) { // is record && is not link
-                $values[$key] = $val->getEmbeddedDirtyAttributes(true);
+                $values[$key] = $val->getEmbeddedDirtyAttributes(null,true);
                 $dirtyValues[$key] = null; // embedded records require copy all values
+            } elseif($val instanceof ActiveRecord && $this->isRelationPopulated($key)) { // is link record
+                $values[$key] = $val->getPrimaryKey();
+                $dirtyValues[$key] = null; // BUG fix
             } elseif(is_array($val)) {
                 foreach($val as $key2 => $rec) {
                     if($values[$key][$key2] instanceof ActiveRecord && !$this->isRelationPopulated($key)) { // is record && is not link
-                        $values[$key][$key2] = $rec->getEmbeddedDirtyAttributes(true);
+                        $values[$key][$key2] = $rec->getEmbeddedDirtyAttributes(null, true);
                     }
                 }
                 $dirtyValues[$key] = null; // embedded records require copy all values
@@ -578,6 +584,7 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
                 } else { // link
                     return true; //!? link relation not need, it's really unsafe use it?
                 }
+
                 return true; // relation founded
             }
         }
@@ -596,20 +603,36 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
         $relation = $this->getRelation($name);
 
         if($relation->embedded) {
-            throw new InvalidCallException('Unable to link models: embedded relation can\'t bee linked.');
-        }
+//            throw new InvalidCallException('Unable to link models: EMBEDDED relation `' . $name . '` can\'t bee linked.');
+            Yii::trace('Convert LINK model to EMBEDDED (unset @rid)', __METHOD__);
+//            $model->setAttribute('@rid', '#-1:-1');
+            $model->markAttributeDirty('@rid'); // call: unset($this->_oldAttributes[$name]);
+            unset($model->{'@rid'}); // will call BaseActiveRecord::__unset
 
-        if($model->getIsNewRecord()) { //? or need auto save
-            throw new InvalidCallException('Unable to link models: relation has no @rid.');
-        }
+            if ($relation->multiple) {
+                $tmpArr = is_array($this->$name) ? $this->$name : [];
+                array_push($tmpArr, $model);
+                $this->$name = $tmpArr;
+                unset($tmpArr);
+            } else {
+                $this->$name = $model;
+            }
 
-        if($relation->multiple) {
-            $tmpArr = is_array($this->$name) ? $this->$name : [];
-            array_push($tmpArr, $model);
-            $this->$name = $tmpArr;
-            unset($tmpArr);
         } else {
-            $this->$name = $model;
+            if ($model->getIsNewRecord()) { //? or need auto save
+                throw new InvalidCallException('Unable to link models: relation `' . $name . '` has no @rid.');
+            }
+
+            if ($relation->multiple) {
+                $tmpArr = is_array($this->$name) ? $this->$name : [];
+                array_push($tmpArr, $model);
+                $this->$name = $tmpArr;
+                $this->populateRelation($name, $this->$name);
+                unset($tmpArr);
+            } else {
+                $this->$name = $model;
+                $this->populateRelation($name, $model);
+            }
         }
     }
 
@@ -618,11 +641,11 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
         $relation = $this->getRelation($name);
 
         if($relation->embedded) {
-            throw new InvalidCallException('Unable to unlink models: embedded relation can\'t bee unlinked.');
+            throw new InvalidCallException('Unable to unlink models: EMBEDDED relation `' . $name . '` can\'t bee unlinked.');
         }
 
         if($model->getIsNewRecord()) { //? impossible
-            throw new InvalidCallException('Unable to unlink models: relation has no @rid.');
+            throw new InvalidCallException('Unable to unlink models: relation `' . $name . '` has no @rid.');
         }
 
         if($delete)
@@ -630,10 +653,13 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
 
         if($relation->multiple) {
             if(is_array($this->$name)) {
-                $tmpArr = [];
-                foreach($this->$name as $rel) {
-                    if($rel['@rid'] !== $model['@rid'])
-                        array_push($tmpArr, $rel);
+                $tmpArr = $this->$name;
+
+                foreach($tmpArr as $key => $rel) {
+                    if($rel['@rid'] === $model['@rid']) {
+                        array_splice($tmpArr, $key, 1);
+                        break;
+                    }
                 }
 
                 $this->$name = $tmpArr;
@@ -656,26 +682,26 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
         $relation = $this->getRelation($name);
 
         if($relation->embedded) {
-            throw new InvalidCallException('Unable to unlink models: embedded relation can\'t bee unlinked All.');
-        }
-
-        if($delete) {
-            if($relation->multiple) {
-                foreach ($this->$name as $rel) {
-                    $rel->delete();
+//            throw new InvalidCallException('Unable to unlink models: embedded relation can\'t bee unlinked All.');
+        } else {
+            if ($delete) {
+                if ($relation->multiple) {
+                    foreach ($this->$name as $rel) {
+                        $rel->delete();
+                    }
+                } else {
+                    $this->$name->delete();
                 }
-            } else {
-                $this->$name->delete();
             }
         }
 
-        if($relation->multiple) {
+        if ($relation->multiple) {
             $this->$name = null;
         } else {
             unset($this->$name); // will call BaseActiveRecord::__unset
         }
 
-//        $this->save(false); //? not need
+//            $this->save(false); //? not need
     }
 
 /*
