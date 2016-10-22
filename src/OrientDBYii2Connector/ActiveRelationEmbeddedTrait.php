@@ -8,6 +8,11 @@ trait ActiveRelationEmbeddedTrait
     public $link;
     public $embedded;
 
+    /**
+     * @param $name
+     * @param $primaryModels
+     * @return array
+     */
     public function populateRelation($name, &$primaryModels)
     {
         // if (!is_array($this->link)) {

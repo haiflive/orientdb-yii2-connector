@@ -798,6 +798,75 @@ class oDealTest extends TestCase
         return $priceFind;
     }
 
+
+    public function testLazyLoadingLinkRelation()
+    {
+        //simulate form input
+        $post = [
+            'oPrice' => [
+                'Price' => '2.00',
+                'Cost' => '22.00',
+                'Discount' => '0',
+                'QuantityMeasure' => '796',
+                'Quantity' => '2.00'
+            ]
+        ];
+
+        $price = new oPrice;
+
+        //simulate form input
+        $postAddress = [
+            'oAddress' => [
+                'PostalCode' => '692500',
+                'CountryCode' => 'RU',
+                'Region' => 'Primorsky kray',
+                'City' => 'Ussuriisk',
+                'StreetHouse' => 'Nekrasova street, 25',
+                'LanguageCode' => 'EN'
+            ]
+        ];
+
+        $address = new oAddress;
+
+        $this->assertTrue($address->load($postAddress), 'Load address POST data');
+        $this->assertTrue($address->validate(),  'Validate address');
+        $this->assertTrue($address->save(),      'Create address');
+
+//        $price->delivery = $address;
+        $price->link('delivery', $address);
+
+        $this->assertTrue($price->load($post), 'Load price POST data');
+        $this->assertTrue($price->validate(),  'Validate price');
+        $this->assertTrue($price->save(),      'Create price');
+
+        $priceFind = oPrice::find()
+            ->where(['@rid' => $price['@rid']])
+//            ->with(['delivery'])
+            ->one();
+
+        $this->assertTrue($priceFind->QuantityMeasure == '796', 'Check QuantityMeasure');
+        $this->assertTrue($priceFind->delivery->PostalCode == '692500', 'Check relation link delivery->PostalCode');
+
+        $priceFind->QuantityMeasure = '999';
+        $priceFind->delivery->PostalCode = '692582';
+
+        $this->assertTrue($priceFind->validate(),  'Validate price');
+        $this->assertTrue($priceFind->save(),  'Update price');
+        $this->assertTrue($priceFind->delivery->save(),  'Update link relation');
+
+        $priceFind2 = oPrice::find()
+            ->where(['@rid' => $price['@rid']])
+//            ->with(['delivery'])
+            ->one();
+
+        $this->assertTrue($priceFind2->QuantityMeasure == '999', 'Check modify QuantityMeasure');
+        $this->assertTrue($priceFind2->delivery->PostalCode == '692582', 'Check modify relation link delivery->PostalCode');
+
+        $priceFind2->unlink('delivery', $priceFind2->delivery);
+
+        return $priceFind;
+    }
+
     public function testOnLoadLinkRelations()
     {
         //simulate form input

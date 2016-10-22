@@ -68,35 +68,41 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
             // }
         // }
     // }
-    /*
+
     public function __get($name)
     {
-        // lazy loading
+        // lazy loading LINK and LINKLIST
         if(
                is_a($this->getAttribute($name), 'PhpOrient\Protocols\Binary\Data\ID')
             || $this->isArrayOfRid($this->getAttribute($name))
         ) {
-            $getter = 'get' . $name;
-            if (method_exists($this, $getter)) {
-                // read property, e.g. getName()
-                $query = $this->$getter();
-                if($query->multiple) {
-                    $rids = $this->getAttribute($query->link);
-                    $ridsResult = [];
-                    foreach($rids as $rid)
-                        array_push($ridsResult, DataRreaderOrientDB::IDtoRid($rid));
-                    $query->andWhere(['in', '@rid', $ridsResult]);
-                    return $query->all();
+            if ($relation = $this->getRelation($name, false)) {
+                if(!$relation->embedded) {
+                    if ($relation->multiple) {
+
+                        $rids = $this->getAttribute($name);
+                        $ridsResult = [];
+                        foreach($rids as $rid)
+                            array_push($ridsResult, DataRreaderOrientDB::IDtoRid($rid));
+                        $relation->andWhere(['in', '@rid', $ridsResult]);
+                        // load relation data:
+                        $this->$name = $relation->all();
+                        $this->populateRelation($name, $this);
+//                        return $this->$name;
+                    } else {
+                        $rid = $this->getAttribute($name);
+                        $relation->andWhere(['=', '@rid', DataRreaderOrientDB::IDtoRid($rid)]);
+                        // load relation data:
+                        $this->$name = $relation->one();
+                        $this->populateRelation($name, $this);
+//                        return $this->$name;
+                    }
                 }
-                // else
-                $rid = $this->getAttribute($query->link);
-                $query->andWhere(['=', '@rid', DataRreaderOrientDB::IDtoRid($rid)]);
-                return $query->one();
             }
         }
         
         return parent::__get($name);
-    }*/
+    }
     
     /*
     public function __get($name)
