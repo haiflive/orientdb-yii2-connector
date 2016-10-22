@@ -12,7 +12,8 @@ Contains:
  - gii support(generate ActiveRecord)
 
 ###### Warning:
-> OrientDB PHP binary protocol has no PDO or Quota methods, this library can bee unsafe
+> OrientDB PHP binary protocol has no PDO or Quota methods, this library can bee unsafe. 
+> If you found vulnerability in quota data methods, please send me feedback
 
 # composer install 
 
@@ -101,68 +102,14 @@ See all models declarations and DB dump here: https://github.com/haiflive/orient
 
 #### Deal.php
 ```php
-
-<?php
-
-namespace app\models;
-
-use Yii;
-
-/**
- * This is the model class for table "Deals".
- *
- * @property string $@class
- * @property string $@rid
- * @property integer $@version
- * @property string $Date
- * @property string $Name
- * @property string $Note
- * @property string $Number
- * @property string $from_address
- * @property string $points
- * @property string $reciver
- * @property string $sender
- * @property string $to_address
- */
-class Deals extends \OrientDBYii2Connector\ActiveRecord
-{
-    /**
-     * @inheritdoc
-     */
-    public static function tableName()
-    {
-        return 'Deals';
-    }
-
 <?php
 
 namespace data;
 
 use Yii;
 
-/**
- * This is the model class for table "Deal".
- *
- * @property string $@class
- * @property string $@rid
- * @property integer $@version
- * @property string $CurrencyCode
- * @property string $Date
- * @property string $Name
- * @property string $Note
- * @property string $Number
- * @property string $addressFrom
- * @property string $addressTo
- * @property string $expenses
- * @property string $goods
- * @property string $reciver
- * @property string $sender
- */
 class oDeal extends \OrientDBYii2Connector\ActiveRecord
 {
-    /**
-     * @inheritdoc
-     */
     public static function tableName()
     {
         return 'Deal';
@@ -172,7 +119,6 @@ class oDeal extends \OrientDBYii2Connector\ActiveRecord
     {
         return $this->embeddedOne(oOrganization::className(), 'sender');
     }
-    // ...
 
     public function getGoods()
     {
@@ -187,9 +133,7 @@ class oDeal extends \OrientDBYii2Connector\ActiveRecord
         return [
             [['@class', '@rid', 'CurrencyCode', 'Name', 'Note', 'Number'], 'string'],
             [['@version'], 'integer'],
-            [['Date',
-//                'addressFrom', 'addressTo', 'expenses', 'goods', 'reciver', 'sender'
-            ], 'safe'],
+            [['Date'], 'safe'],
         ];
     }
 
@@ -216,8 +160,6 @@ class oDeal extends \OrientDBYii2Connector\ActiveRecord
         ];
     }
 }
-
-
 
 ```
 
