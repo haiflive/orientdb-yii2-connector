@@ -537,7 +537,7 @@ class oDealTest extends TestCase
         $deal->expenses[0]->prices[0]->link('delivery', $address1);
 
         // link of relation of relation of relation
-        $deal->expenses[0]->prices[0]->transport->link('driver', $driver);
+        $deal->expenses[0]->prices[0]->transport->link('driver', $driver); // embedded
 
         //
         $deal->expenses[0]->prices[1]->link('delivery', $address2);
@@ -548,8 +548,101 @@ class oDealTest extends TestCase
         $this->assertTrue($deal->validate(),  'Validate deal');
         $this->assertTrue($deal->save(),      'Create deal');
 
+        $dealFind = oDeal::find()
+            ->where(['@rid' => $deal['@rid']])
+            ->with([
+                'sender',
+                'reciver',
+                'addressTo',
+                'addressFrom',
+                'goods',
+                'expenses',
+                'expenses.executor',
+                'expenses.prices',
+                'expenses.prices.delivery',
+                'expenses.prices.transport',
+                'expenses.prices.transport.driver',
+                'expenses.prices.goods',
+            ])
+            ->one();
+
+        $this->assertTrue($dealFind->sender instanceof \yii\db\ActiveRecord, 'Sender Exists');
+        $this->assertTrue($dealFind->reciver instanceof \yii\db\ActiveRecord, 'Sender Exists');
+        $this->assertTrue($dealFind->addressTo instanceof \yii\db\ActiveRecord, 'addressTo Exists');
+        $this->assertTrue($dealFind->addressFrom instanceof \yii\db\ActiveRecord, 'addressFrom Exists');
+        $this->assertTrue(count($dealFind->goods) > 0, 'deal goods array items Exists');
+        $this->assertTrue($dealFind->goods[0] instanceof \yii\db\ActiveRecord, 'goods Exists');
+        $this->assertTrue(count($dealFind->expenses) > 0, 'expenses array items Exists');
+        $this->assertTrue($dealFind->expenses[0] instanceof \yii\db\ActiveRecord, 'expense Exists');
+        $this->assertTrue($dealFind->expenses[0]->executor instanceof \yii\db\ActiveRecord, 'expense executor Exists');
+        $this->assertTrue(count($dealFind->expenses[0]->prices) > 0, 'expense prices array items Exists');
+        $this->assertTrue($dealFind->expenses[0]->prices[0] instanceof \yii\db\ActiveRecord, 'expenses price Exists');
+        $this->assertTrue($dealFind->expenses[0]->prices[0]->delivery instanceof \yii\db\ActiveRecord, 'expense price delivery Exists');
+        $this->assertTrue($dealFind->expenses[0]->prices[0]->transport instanceof \yii\db\ActiveRecord, 'expense price transport Exists');
+        $this->assertTrue($dealFind->expenses[0]->prices[0]->transport->driver instanceof \yii\db\ActiveRecord, 'expense price transport driver Exists');
+        $this->assertTrue(count($dealFind->expenses[0]->prices[0]->goods) > 0, 'expense price goods array items Exists');
+        $this->assertTrue($dealFind->expenses[0]->prices[0]->goods[0] instanceof \yii\db\ActiveRecord, 'expense price good Exists');
+
         return $deal;
     }
+
+
+    public function testCreateRelationByRelationDeal()
+    {
+        //simulate form input
+        $post = [
+            'oDeal' => [
+                'CurrencyCode' => 'USD',
+                'Date' => date('Y-m-d'),
+                'Name' => 'unit_test_deal',
+                'Note' => 'testing relations',
+                'Number' => '0001',
+                'expenses' => [[
+                    '@class'=>'Expense', //!
+                    'Name' => 'Test Expense',
+                    'Price' => '100.00',
+                    'CurrencyCode' => 'USD',
+                    'Margin' => '0',
+                    'Cost' => '100.00'
+                ],[
+                    '@class'=>'Expense', //!
+                    'Name' => 'Test Expense',
+                    'Price' => '100.00',
+                    'CurrencyCode' => 'USD',
+                    'Margin' => '0',
+                    'Cost' => '100.00'
+                ]],
+            ]
+        ];
+
+        $deal = new oDeal;
+        // create relations
+        $executor = $this->testCreateExecutor(); // has services(LINKLIST)
+
+        $this->assertTrue($deal->load($post), 'Load deal POST data');
+
+        // link of relation
+        $deal->expenses[0]->link('executor', $executor);
+
+//        $deal->expenses[1]->executor = $executor; //"-" test magic relation
+        $deal->expenses[1]->link('executor', $executor); //"+" test link
+
+        $this->assertTrue($deal->validate(),  'Validate deal');
+        $this->assertTrue($deal->save(),      'Create deal');
+
+        $dealFind = oDeal::find()
+            ->where(['@rid' => $deal['@rid']])
+            ->with([
+                'expenses',
+                'expenses.executor'
+            ])
+            ->one();
+
+        $this->assertTrue($dealFind->expenses[0]->executor instanceof \yii\db\ActiveRecord, 'expense executor Exists');
+
+        return $deal;
+    }
+
     
     /* --->*
      * @depends testCreateDeal

@@ -61,6 +61,16 @@ trait ActiveRelationEmbeddedTrait
                         $primaryModels[$i][$name] = $value;
                     }
                     array_push($models, $model);
+                } else {
+                    $rows = $primaryModels[$i][$name];
+                    if(empty($rows))
+                        return [];
+
+                    $model = $this->populate([$rows]);
+
+                    $primaryModels[$i][$name] = reset($model) ?: $this->one();
+                    if(!$this->embedded)
+                        $primaryModels[$i]->populateRelation($name, $model);
                 }
             }
             // if ($this->inverseOf !== null) {

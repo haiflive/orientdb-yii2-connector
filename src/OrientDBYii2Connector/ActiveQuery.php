@@ -2,7 +2,7 @@
 namespace OrientDBYii2Connector;
 
 use yii\db\ActiveQueryInterface;
-use yii\db\ActiveQueryTrait;
+//use OrientDBYii2Connector\ActiveQueryTrait;
 //use yii\db\ActiveRelationTrait;
 use OrientDBYii2Connector\DataRreaderOrientDB;
 
@@ -40,38 +40,6 @@ class ActiveQuery extends Query implements ActiveQueryInterface
             return null;
         }
     }
-    
-    public function with()
-    {
-        $with = func_get_args();
-        if (isset($with[0]) && is_array($with[0])) {
-            // the parameter is given as an array
-            $with = $with[0];
-        }
-
-        if (empty($this->with)) {
-            $this->with = $with;
-        } elseif (!empty($with)) {
-            foreach ($with as $name => $value) {
-                if (is_int($name)) {
-                    // repeating relation is fine as normalizeRelations() handle it well
-                    $this->with[] = $value;
-                } else {
-                    $this->with[$name] = $value;
-                }
-            }
-        }
-        
-        // setup fetch_plan
-        $fetch_plan = [];
-        foreach($this->with as $rel) {
-            array_push($fetch_plan, $rel.':0');
-        }
-        
-        $this->fetch_plan($fetch_plan);
-
-        return $this;
-    }
 
     /**
      * @param array $rows array of data
@@ -98,22 +66,6 @@ class ActiveQuery extends Query implements ActiveQueryInterface
         }
 
         return $models;
-    }
-    
-    public function findWith($with, &$models)
-    {
-        $primaryModel = new $this->modelClass;
-        $relations = $this->normalizeRelations($primaryModel, $with);
-
-        /* @var $relation ActiveQuery */
-        foreach ($relations as $name => $relation) {
-            if ($relation->asArray === null) {
-                // inherit asArray from primary query
-                $relation->asArray($this->asArray);
-            }
-
-            $relation->populateRelation($name, $models);
-        }
     }
     
 
