@@ -313,6 +313,25 @@ $deal->expenses[1]->link('executor', $executor);  // link relation (hasOne)
 if($deal->validate()) { // will validate recursively all related data
     if($deal->save()){
       echo "success!";
+      
+      // and now you can get full tree of data, all with EMBEDDED and LINK relations:
+      $dealFind = oDeal::find()
+            ->where(['@rid' => $deal['@rid']])
+            ->with([
+                'sender', //embedded
+                'reciver',
+                'addressTo',
+                'addressFrom',
+                'goods', //embedded list
+                'expenses',
+                'expenses.executor', // link
+                'expenses.prices',
+                'expenses.prices.delivery',
+                'expenses.prices.transport',
+                'expenses.prices.transport.driver',
+                'expenses.prices.goods',
+            ])
+            ->one();
     }
 }
 
