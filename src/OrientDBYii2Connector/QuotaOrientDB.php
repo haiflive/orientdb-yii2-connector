@@ -1,7 +1,6 @@
 <?php
 namespace OrientDBYii2Connector;
 
-use OrientDBYii2Connector\OrientDBException;
 /**
  *  @QuotaOrientDB static class helper quota db vaues(orient has no pdo)
  *  
@@ -10,8 +9,8 @@ use OrientDBYii2Connector\OrientDBException;
 class QuotaOrientDB
 {
     /**
-     *  @value - string to bee filter
-     *  @return filtered string
+     * @param $value string to bee filter
+     * @return string - filtered string
      */
     static public function quoteValue($value)
     {
@@ -40,7 +39,12 @@ class QuotaOrientDB
         // return bin2hex($value);
         return '\'' . self::escape($value) . '\'';
     }
-    
+
+    /**
+     * @param $tableName
+     * @return string - quoted table name
+     * @throws OrientDBException - if table name invalid
+     */
     static public function quoteTableName($tableName)
     {
         $name = filter_var($tableName, FILTER_VALIDATE_REGEXP, ["options"=>["regexp"=>"/^[a-zA-Z_][a-zA-Z0-9_]*$/"]]);
@@ -49,22 +53,25 @@ class QuotaOrientDB
         
         return '`'. $name .'`';
     }
-    
+
     /**
+     * @param $columnName - quota column name
      *  skip: @rid, @version, @class, clusterName.@rid, clusterName.@version, clusterName.@class
+     * @return mixed
+     * @throws OrientDBException
      */
-    static public function quoteColumnName($columName)
+    static public function quoteColumnName($columnName)
     {
-        $name = filter_var($columName, FILTER_VALIDATE_REGEXP, [
+        $name = filter_var($columnName, FILTER_VALIDATE_REGEXP, [
                     "options" => [
                         "regexp"=>"/^[a-zA-Z_@][a-zA-Z0-9_]*(\.@)?[a-zA-Z0-9_]*$/"
                     ]
                 ]);
         
-        if( $name !== $columName || empty($name))
-            throw new OrientDBException(__CLASS__ . " unsafe column name: "  . $columName);
+        if( $name !== $columnName || empty($name))
+            throw new OrientDBException(__CLASS__ . " unsafe column name: "  . $columnName);
         
-        return $columName;
+        return $columnName;
     }
     
     static public function isRid($value)
@@ -102,7 +109,10 @@ class QuotaOrientDB
             
             return $embeddedData;
         } else if(!empty($embeddedData) && isset($embeddedData[0]) && !is_array($embeddedData[0])) { // check it may bee error
-            throw new OrientDBException(__CLASS__ . " embedded relation require `@class` param");
+            throw new OrientDBException(
+                __CLASS__ . " embedded relation require `@class` param"
+                . "\r\n given: " . json_encode($embeddedData)
+            );
         }
         
         // this embedded list:

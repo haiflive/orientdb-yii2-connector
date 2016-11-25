@@ -182,13 +182,19 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
         $query->from(static::tableName()); //->select(static::tableName());
         return $query;
     }
-    
+
     /**
-     * @param ActiveRecord $record
-     * @param Document|array $row
+     * @param BaseActiveRecord $record
+     * @param array $row
      */
     public static function populateRecord($record, $row)
     {
+        // setup @class if not exists - required attribute
+        if(is_array($row) && empty($row['@class'])) {
+            Yii::info('Setup required empty @class(`'.$record::tableName().'`) for record');
+            $row['@class'] = $record::tableName();
+        }
+
         BaseActiveRecord::populateRecord($record, $row);
     }
     
@@ -561,6 +567,7 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
      * @param $name string
      * @param $value mixed
      * @return bool if true relation setuped
+     * * @throws InvalidConfigException
      */
     protected function trySetupEmbeddedRelation($name, $value)
     {
@@ -571,6 +578,15 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
                     if($query->multiple) {
                         $resultModels = [];
                         foreach($value as $key => $val) {
+
+                            // add more information about mistake data
+                            if(!is_array($val)) {
+                                throw new InvalidConfigException(
+                                    get_called_class() . ', - embedded multiple relation '. $name .'` must bee array of array of key value.'
+                                    . "\r\n given: " . json_encode($value)
+                                );
+                            }
+
                             $values = array_fill_keys(array_keys($val), null);
                             $models = $query->populate([$values]);
                             $model = reset($models) ?: null;
@@ -581,6 +597,13 @@ abstract class ActiveRecord extends \yii\db\ActiveRecord /* gii reqire extends f
                         }
                         $this->$name = $resultModels;
                     } else {
+                        if(!is_array($value)) {
+                            throw new InvalidConfigException(
+                                get_called_class() . ', - embedded relation '. $name .'` must bee array of key value.'
+                                . "\r\n given: " . json_encode($value)
+                            );
+                        }
+
                         $values = array_fill_keys(array_keys($value), null);
                         $models = $query->populate([$values]);
                         $this->$name = reset($models) ?: null;
