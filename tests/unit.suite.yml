@@ -7,4 +7,7 @@ modules:
     enabled:
         - Asserts
         - \Helper\Unit
-        - Db
+#        - Db
+        - Yii2:
+            part: [orm, email]
+            configFile: 'tests/unit/_config.php'

@@ -2,13 +2,13 @@
 
 namespace tests\codeception\unit\models;
 
-use yii\codeception\TestCase;
 use PhpOrient\PhpOrient;
 /**
  *  https://github.com/Ostico/PhpOrient/issues/58
+ *  [depricated], fixed in "ostico/phporient": "v1.2.5"
  */
 
-class PhpOrientTest extends TestCase
+class PhpOrientTest extends \Codeception\Test\Unit
 {
     public $appConfig = '@tests/unit/_config.php';
     

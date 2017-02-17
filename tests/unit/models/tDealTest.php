@@ -2,7 +2,6 @@
 
 namespace tests\codeception\unit\models;
 
-use yii\codeception\TestCase;
 use data\tOrganization;
 use data\tExpense;
 use data\tGoods;
@@ -13,10 +12,8 @@ use data\tTransport;
 use data\tResident;
 use data\tDeal;
 
-class tDealTest extends TestCase
+class tDealTest extends \Codeception\Test\Unit
 {
-    public $appConfig = '@tests/unit/_config.php';
-    
     public function testCreateSender()
     {
         //simulate form input
