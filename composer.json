@@ -1,9 +1,9 @@
 {
     "name": "haiflive/orientdb-yii2-connector",
-    "description": "Yii2 connector to orientDB, php7, query builder, command builder",
+    "description": "Yii2 connector to orientDB, php7, query builder, command builder, ActiveRecord relations",
     "type": "library",
     "require": {
-        "ostico/phporient": "v1.2.4"
+        "ostico/phporient": "v1.2.5"
     },
     "license": "MIT",
     "authors": [

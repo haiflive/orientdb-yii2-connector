@@ -15,6 +15,10 @@ Contains:
 > OrientDB PHP binary protocol has no PDO or Quota methods, this library can bee unsafe. 
 > If you found vulnerability in quota data methods, please send me feedback
 
+#### Requires
+- PHP Version >= 5.4 ( Socket extension enabled )
+- Orientdb version 2.2.14 or later.
+
 # composer install 
 
 ```bash
@@ -372,7 +376,7 @@ $priceFind = oPrice::find()
 
 
 # Stability
-Alpha
+RC
 
 # License
 The MIT License (MIT)
