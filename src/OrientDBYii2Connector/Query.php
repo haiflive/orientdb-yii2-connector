@@ -141,6 +141,30 @@ class Query extends Component implements QueryInterface
         return $this->populate($rows);
     }
     
+    /**
+     * Converts the raw query results into the format as specified by this query.
+     * This method is internally used to convert the data fetched from database
+     * into the format as required by this query.
+     * @param array $rows the raw query result from database
+     * @return array the converted query result
+     */
+    public function populate($rows)
+    {
+        if ($this->indexBy === null) {
+            return $rows;
+        }
+        $result = [];
+        foreach ($rows as $row) {
+            if (is_string($this->indexBy)) {
+                $key = $row[$this->indexBy];
+            } else {
+                $key = call_user_func($this->indexBy, $row);
+            }
+            $result[$key] = $row;
+        }
+        return $result;
+    }
+    
     public function one($db = null)
     {
         $this->limit = 1;
