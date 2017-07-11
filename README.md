@@ -13,7 +13,8 @@ Contains:
 
 ###### Warning:
 > OrientDB PHP binary protocol has no PDO or Quota methods, this library can bee unsafe. 
-> If you found vulnerability in quota data methods, please send me feedback
+> If you found vulnerability in quota data methods, please create Issues
+
 
 #### Requires
 - PHP Version >= 5.4 ( Socket extension enabled )
@@ -56,47 +57,106 @@ return [
 use PhpOrient\PhpOrient;
 use PhpOrient\Protocols\Binary\Data\Record;
 use OrientDBYii2Connector\Query;
-use OrientDBYii2Connector\DataRreaderOrientDB;
 ```
 #### ActiveQuery usage
 ```php
-$client = Yii::$app->dborient->createCommand();
-$sql = $client->insert('beer', [
-      'name' => 'test2',
-      'descript' => $longText,
-  ])->execute();
-$testQ = (new Query())
-      // ->select('name', 'descript', 'out_HasCategory.in.exclude(\'in_HasCategory\')')
-      // ->select('name')
+    $client = Yii::$app->dborient->createCommand();
+    
+    // create new record
+    $just_inserted = $client->insert('beer', [
+          'name' => 'test2',
+          'descript' => $longText,
+    ])->execute();
+    
+    // select just created record by RID
+    $data = (new Query())->from('beer')
+      ->where(['@rid'=>$just_inserted['@rid']])
+      ->one();
+      
+    var_dump($data);
+    
+    // get list of records:
+    $data_list = (new Query())
       ->from('beer')
-      // ->limit(2)
-      // ->where(['name' => 'Hocus Pocus'])
       ->fetch_plan(['out_HasCategory.in:0', 'out_HasBrewery.in:0', 'out_HasStyle.in:0'])
+      // ->select('name', 'descript', 'out_HasCategory.in.exclude(\'in_HasCategory\')')
+      // ->where(['name' => 'Hocus Pocus'])
       // ->limit(10)
-      // ->exists(Yii::$app->dborient);
-      ->all(Yii::$app->dborient);
+      // support all Yii methods, without join (no join in OrientDB)
+      ->all();
     
-    // use tree builder(associate records and relations)
-    $data = (new DataRreaderOrientDB($testQ))->getTree();
-    
-    // result:
-    echo json_encode($data);
-    
-    // OR result as is
-    // records
-    foreach($testQ['records'] as $key => $value) {
-        echo $value->__toString();
+    foreach($data as $key => $record) {
+        var_dump($record);
+        // do something
     }
-    // fetch relations
-    foreach($testQ['relations'] as $key => $value) {
-        echo $value->__toString();
-    }
-    
     
     // remove record
     $sql = $client->delete('beer', [
         'name' => 'test2',
     ])->execute();
+```
+
+#### ActiveQuery relations
+```php
+    $good_insert = $client->insert('Goods', [
+        'GoodsDescription' => 'test Query GoodsDescription',
+        'GoodsQuantity' => '11',
+    ])->execute();
+
+    // get by RID
+    $good_select = (new Query())->from('Goods')
+      ->where(['@rid'=>$good_insert['@rid']])
+      ->one();
+      
+    // or query All
+    $test_query_all = (new Query())
+      ->from('Goods')
+      ->all();
+
+// -- embedded relation
+    $expense_insert = $client->insert('Expense', [
+       'Name' => 'test Query Expense related',
+       'Price' => '1021',
+       // 'executor' => // linlk
+       'prices' => [[ // embedded list (has_many)
+         // "@type" => "d",
+         // "@version" => 0,
+         "@class" => "Price", //! required for embedded
+         "Price" => 45,
+         "Cost" => 156,
+         "transport" => [ // embedded (has_one)
+           "@class" => "Transport", //! required for embedded
+           "Capacity" => 3,
+           "ContainerKind" => "test Query Expense embedded -> embedded"
+         ]
+       ]]
+    ])->execute();
+    
+    // get by RID
+    $expense_select = (new Query())->from('Expense')
+      ->where(['@rid'=>$expense_insert['@rid']])
+      ->one();
+      
+//-- link relation
+   // create record `Organization` for relation with `Expense`
+    $organization_insert = $client->insert('Organization', [
+        'Country' => 56,
+        'OrganizationName' => 'rest link realtion organization name',
+        'Site' => 'test.te'
+    ])->execute();
+
+    // create `Expense` with link relation `executor`
+    $expense_insert = $client->insert('Expense', [
+        'Name' => 'test Query Expense related',
+        'Price' => '1021',
+        'executor' => $organization_insert['@rid'] // link
+    ])->execute();
+
+    // get by RID and load with link relation
+    $expense_select = (new Query())->from('Expense')
+      ->where(['@rid'=>$expense_insert['@rid']])
+      ->fetch_plan('executor:0') // `:0` - is level (read more in OrientDB documentation about fetch_plan)
+      ->one();
 ```
 
 ## ActiveRecord
