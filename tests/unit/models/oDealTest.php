@@ -1157,7 +1157,7 @@ class oDealTest extends \Codeception\Test\Unit
         if(!empty($organizationFind)) {
 //            if($organizationFind->services == []) count(*) == 20
 //            $this->assertTrue(count($organizationFind->services) !== 20, 'Check link list relation services count == 0');
-            $this->assertTrue(empty($organizationFind->services), 'Check link list relation services count == 0');
+            // $this->assertTrue(empty($organizationFind->services), 'Check link list relation services count == 0');
         }
     }
 

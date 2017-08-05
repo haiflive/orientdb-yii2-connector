@@ -39,6 +39,18 @@ class oQueryTest extends \Codeception\Test\Unit
         
         $this->assertTrue(count($test_query_all) > 0, 'test query all');
         $this->assertTrue($test_query_all[0]['@rid'] == $good_insert['@rid'] , 'test query all');
+        
+        // remove just created record
+        $good_delete = $client->delete('Goods', [
+            '@rid'=>$good_insert['@rid']
+        ])->execute();
+        
+        // check not exists
+        $good_select_deleted = (new Query())->from('Goods')
+          ->where(['@rid'=>$good_insert['@rid']])
+          ->one();
+          
+        $this->assertTrue($good_select_deleted === null, 'query deleted');
     }
     
     public function testCreateRelatedEmbedded()

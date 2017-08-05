@@ -135,7 +135,7 @@ class QueryBuilder extends \yii\base\Object
         if(!$itVertex)
             $type = 'EDGE';
         
-        $sql = 'DELETE '. $type .' FROM ' . $this->db->quoteTableName($table);
+        $sql = 'DELETE '. $type .' ' . $this->db->quoteTableName($table);
         $where = $this->buildWhere($condition, $params);
 
         return $where === '' ? $sql : $sql . ' ' . $where;
